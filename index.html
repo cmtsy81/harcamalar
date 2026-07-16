@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tatil Harcama Takibi</title>
+  <meta name="description"
+    content="Tatil grubu harcamalarını takip eden, kimin ne kadar ödediğini ve kime ne kadar borçlu olduğunu gösteren sayfa.">
+  <script>
+    // Immediate theme logic to prevent flashing
+    const savedTheme = localStorage.getItem('tatil_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background:
+        radial-gradient(ellipse at 0% 0%, rgba(99, 102, 241, .09) 0%, transparent 55%),
+        radial-gradient(ellipse at 100% 100%, rgba(245, 158, 11, .06) 0%, transparent 55%),
+        var(--bg);
+    }
+
+    /* NAV */
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg-bar);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      color: var(--text-1);
+    }
+
+    .admin-link {
+      font-size: .8125rem;
+      color: var(--text-2);
+      text-decoration: none;
+      padding: 7px 14px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+      transition: all var(--t-fast);
+    }
+
+    .admin-link:hover {
+      color: var(--text-1);
+      border-color: var(--border-hover);
+      background: var(--glass);
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      padding: 52px 0 32px;
+      text-align: center;
+    }
+
+    .trip-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: var(--r-full);
+      background: var(--glass);
+      border: 1px solid var(--border);
+      font-size: .8rem;
+      color: var(--text-2);
+      margin-bottom: 16px;
+    }
+
+    .trip-title {
+      background: linear-gradient(135deg, #F1F5F9 0%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .trip-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--text-3);
+      font-size: .875rem;
+      flex-wrap: wrap;
+    }
+
+    .trip-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulseDot 2s ease-in-out infinite;
+    }
+
+    .last-upd {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: .75rem;
+      color: var(--text-3);
+    }
+
+    /* STATS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 48px;
+    }
+
+    .stat-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 20px;
+      text-align: center;
+      transition: all var(--t-norm);
+    }
+
+    .stat-card:hover {
+      background: var(--glass-hover);
+      border-color: var(--border-hover);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+
+    .stat-label {
+      font-size: .72rem;
+      color: var(--text-3);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* SECTION */
+    .section {
+      margin-bottom: 52px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .cur-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .cur-icon-try {
+      background: var(--try-soft);
+      color: var(--try);
+      border: 1px solid var(--try-border);
+    }
+
+    .cur-icon-eur {
+      background: var(--eur-soft);
+      color: var(--eur);
+      border: 1px solid var(--eur-border);
+    }
+
+    /* TWO-COL */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    /* BALANCE TABLE */
+    .bal-pos {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .bal-neg {
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    .bal-zer {
+      color: var(--text-3);
+    }
+
+    .person-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* SETTLEMENT */
+    .transfer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      gap: 10px;
+      flex-wrap: wrap;
+      transition: all var(--t-norm);
+    }
+
+    .transfer-row:hover {
+      background: var(--glass-hover);
+      border-color: var(--border-hover);
+    }
+
+    .transfer-from-to {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .transfer-person {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      font-size: .9375rem;
+    }
+
+    .transfer-arrow {
+      color: var(--text-3);
+      font-size: 1.125rem;
+    }
+
+    .transfer-amount {
+      font-size: 1.125rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .settle-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .settle-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 28px 16px;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      color: var(--text-3);
+      text-align: center;
+    }
+
+    /* EXPENSES */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: var(--r-full);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      font-family: inherit;
+      font-size: .8125rem;
+      cursor: pointer;
+      transition: all var(--t-fast);
+    }
+
+    .filter-btn.active {
+      color: var(--text-1);
+      border-color: var(--border-hover);
+      background: var(--glass);
+    }
+
+    .exp-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      transition: all var(--t-norm);
+      cursor: pointer;
+    }
+
+    .exp-card:hover {
+      border-color: var(--border-hover);
+      background: var(--glass-hover);
+    }
+
+    .exp-head {
+      display: flex;
+      align-items: center;
+      padding: 18px 20px;
+      gap: 14px;
+    }
+
+    .exp-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .exp-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .exp-title {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .exp-meta {
+      font-size: .8125rem;
+      color: var(--text-2);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .exp-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .exp-amount {
+      font-size: 1.125rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .exp-payer {
+      font-size: .75rem;
+      color: var(--text-2);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .chevron {
+      color: var(--text-3);
+      transition: transform var(--t-fast);
+      flex-shrink: 0;
+    }
+
+    .exp-card.open .chevron {
+      transform: rotate(180deg);
+    }
+
+    .exp-body {
+      border-top: 1px solid var(--border);
+      padding: 18px 20px;
+      display: none;
+    }
+
+    .exp-card.open .exp-body {
+      display: block;
+    }
+
+    .exp-note {
+      font-size: .875rem;
+      color: var(--text-2);
+      padding: 10px 14px;
+      background: var(--bg-2);
+      border-radius: var(--r-md);
+      margin-bottom: 16px;
+    }
+
+    .shares-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .share-item {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 10px 12px;
+    }
+
+    .share-person {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .share-name {
+      font-size: .78rem;
+      color: var(--text-2);
+    }
+
+    .share-amt {
+      font-weight: 600;
+      font-size: .9375rem;
+    }
+
+    /* LOADING / ERROR */
+    .center-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .center-state p {
+      color: var(--text-2);
+      max-width: 380px;
+      font-size: .9375rem;
+    }
+
+    /* FOOTER */
+    .page-footer {
+      padding: 32px 0;
+      border-top: 1px solid var(--border);
+      margin-top: 32px;
+      text-align: center;
+      font-size: .8125rem;
+      color: var(--text-3);
+    }
+
+    @media (max-width: 900px) {
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .transfer-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .page-header {
+        padding: 32px 0 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav-bar">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">🌴 Tatil Kasası</a>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()"
+          style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500;">🌓 Tema</button>
+        <a href="admin.html" class="admin-link">⚙️ Yönetim Paneli</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Loading State -->
+  <div id="st-loading" class="center-state">
+    <div class="spinner"></div>
+    <p style="color:var(--text-2);font-size:.9rem">Veriler yükleniyor…</p>
+  </div>
+
+  <!-- Error State -->
+  <div id="st-error" class="center-state hidden">
+    <div style="font-size:3rem">⚠️</div>
+    <h2>Veri Yüklenemedi</h2>
+    <p>
+      <code>data.json</code> dosyası bulunamadı ya da geçersiz.
+      Sayfayı bir web sunucusu üzerinden açın veya admin panelinden veri girin.
+    </p>
+    <a href="admin.html" class="btn btn-primary" style="margin-top:8px">⚙️ Admin Paneline Git</a>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="hidden">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="container-sm">
+        <div class="trip-badge" id="h-dest">📍</div>
+        <h1 class="trip-title" id="h-title">Tatil Harcama Takibi</h1>
+        <div class="trip-meta">
+          <span>📅 <span id="h-dates">—</span></span>
+          <span>·</span>
+          <span>👥 <span id="h-persons">—</span></span>
+          <span>·</span>
+          <span>🏠 <span id="h-families">—</span></span>
+          <span>·</span>
+          <span>🏷️ Sürüm: <span id="h-version">—</span></span>
+        </div>
+        <div class="last-upd">
+          <span class="live-dot"></span>
+          Son güncelleme: <strong id="h-updated">—</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <!-- Stats -->
+      <div class="stats-grid animate-in" id="stats-grid"></div>
+
+      <!-- TRY Section -->
+      <div class="section animate-in" id="try-section">
+        <div class="section-head">
+          <div class="cur-icon cur-icon-try">₺</div>
+          <h2>Türk Lirası Hesabı</h2>
+        </div>
+        <div class="two-col">
+          <div>
+            <div
+              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
+              Kişi Bakiyeleri</div>
+            <div
+              style="border-radius:var(--r-xl);border:1px solid var(--border);overflow:hidden;background:var(--glass)">
+              <table class="table" id="try-tbl">
+                <thead>
+                  <tr>
+                    <th>Kişi</th>
+                    <th class="text-right">Ödedi</th>
+                    <th class="text-right">Payı</th>
+                    <th class="text-right">Bakiye</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div
+              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
+              Ödeme Planı ₺</div>
+            <div id="try-settle" class="settle-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EUR Section -->
+      <div class="section animate-in" id="eur-section">
+        <div class="section-head">
+          <div class="cur-icon cur-icon-eur">€</div>
+          <h2>Euro Hesabı</h2>
+        </div>
+        <div class="two-col">
+          <div>
+            <div
+              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
+              Kişi Bakiyeleri</div>
+            <div
+              style="border-radius:var(--r-xl);border:1px solid var(--border);overflow:hidden;background:var(--glass)">
+              <table class="table" id="eur-tbl">
+                <thead>
+                  <tr>
+                    <th>Kişi</th>
+                    <th class="text-right">Ödedi</th>
+                    <th class="text-right">Payı</th>
+                    <th class="text-right">Bakiye</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div
+              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
+              Ödeme Planı €</div>
+            <div id="eur-settle" class="settle-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expenses -->
+      <div class="section animate-in">
+        <div class="filter-row">
+          <h2>Tüm Harcamalar</h2>
+          <div class="filter-btns">
+            <button class="filter-btn active" data-f="all" onclick="setFilter(this,'all')">Tümü</button>
+            <button class="filter-btn" data-f="TRY" onclick="setFilter(this,'TRY')">₺ TL</button>
+            <button class="filter-btn" data-f="EUR" onclick="setFilter(this,'EUR')">€ EUR</button>
+          </div>
+        </div>
+        <div id="exp-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
+    </div><!-- /container -->
+  </div><!-- /app -->
+
+  <footer class="page-footer">
+    <div class="container">Tatil Kasası • Hesaplar otomatik hesaplanmaktadır</div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script>
+    /* ================================================================
+       CONSTANTS
+    ================================================================ */
+    const CAT = {
+      transport: { icon: '✈️', label: 'Ulaşım', bg: 'rgba(99,102,241,.15)' },
+      accommodation: { icon: '🏠', label: 'Konaklama', bg: 'rgba(245,158,11,.12)' },
+      food: { icon: '🍽️', label: 'Yemek', bg: 'rgba(16,185,129,.12)' },
+      activity: { icon: '🎭', label: 'Aktivite', bg: 'rgba(129,140,248,.15)' },
+      shopping: { icon: '🛍️', label: 'Alışveriş', bg: 'rgba(251,191,36,.12)' },
+      health: { icon: '💊', label: 'Sağlık', bg: 'rgba(244,63,94,.12)' },
+      other: { icon: '📦', label: 'Diğer', bg: 'rgba(100,116,139,.12)' }
+    };
+    const FAM = {
+      A: { bg: 'rgba(129,140,248,.18)', color: '#818CF8', label: 'Aile A' },
+      B: { bg: 'rgba(245,158,11,.18)', color: '#F59E0B', label: 'Aile B' },
+      _: { bg: 'rgba(100,116,139,.18)', color: '#94A3B8', label: 'Aile ?' }
+    };
+
+    let _data = null;
+    let _filter = 'all';
+
+    /* ================================================================
+       DATA LOADING
+    ================================================================ */
+    async function loadData() {
+      let fetched = null;
+      let viewCache = null;
+      let adminCache = null;
+
+      // 1) Try fetching from disk/server
+      try {
+        const r = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
+        if (r.ok) fetched = await r.json();
+      } catch (e) { console.warn('fetch failed:', e.message); }
+
+      // 2) Try loading view cache
+      try {
+        const c = localStorage.getItem('tatil_view_cache');
+        if (c) viewCache = JSON.parse(c);
+      } catch (e) { }
+
+      // 3) Try loading admin cache
+      try {
+        const a = localStorage.getItem('tatil_harcama_data');
+        if (a) adminCache = JSON.parse(a);
+      } catch (e) { }
+
+      // Compare versions to find the absolute latest data
+      let best = fetched;
+      let source = "sunucu/dosya";
+
+      if (viewCache && (!best || (viewCache.version || 0) > (best.version || 0))) {
+        best = viewCache;
+        source = "önbellek";
+      }
+      if (adminCache && (!best || (adminCache.version || 0) > (best.version || 0))) {
+        best = adminCache;
+        source = "yerel tarayıcı kaydı";
+      }
+
+      if (best) {
+        // Sync the caches so they stay up-to-date
+        localStorage.setItem('tatil_view_cache', JSON.stringify(best));
+
+        // Alert the user if we had to fall back to a local copy
+        if (best !== fetched) {
+          toast(`⚠️ En güncel veriler yerel hafızadan yüklendi (${source}).`, 'info');
+        }
+        return best;
+      }
+
+      return null;
+    }
+
+    /* ================================================================
+       CALCULATIONS
+    ================================================================ */
+    function calcBalances(data, cur) {
+      const paid = {}, share = {};
+      data.persons.forEach(p => { paid[p.id] = 0; share[p.id] = 0; });
+      data.expenses.filter(e => e.currency === cur).forEach(exp => {
+        paid[exp.paidBy] = (paid[exp.paidBy] || 0) + exp.totalAmount;
+        Object.entries(exp.shares || {}).forEach(([id, s]) => {
+          share[id] = (share[id] || 0) + (+s || 0);
+        });
+      });
+
+      // Find family heads (first person defined in each family group)
+      const heads = {};
+      data.persons.forEach(p => {
+        if (!heads[p.family]) {
+          heads[p.family] = p;
+        }
+      });
+
+      // Aggregate paid and share under family heads
+      const headPaid = {}, headShare = {}, headNet = {};
+      Object.keys(heads).forEach(fam => {
+        const headId = heads[fam].id;
+        headPaid[headId] = 0;
+        headShare[headId] = 0;
+      });
+
+      data.persons.forEach(p => {
+        const headId = heads[p.family].id;
+        headPaid[headId] += paid[p.id] || 0;
+        headShare[headId] += share[p.id] || 0;
+      });
+
+      Object.keys(heads).forEach(fam => {
+        const headId = heads[fam].id;
+        headNet[headId] = headPaid[headId] - headShare[headId];
+      });
+
+      return { paid: headPaid, share: headShare, net: headNet, heads };
+    }
+
+    function settlement(net, persons) {
+      const cred = [], debt = [];
+      Object.entries(net).forEach(([id, b]) => {
+        const name = persons.find(p => p.id === id)?.name || id;
+        if (b > 0.5) cred.push({ id, name, amt: b });
+        if (b < -0.5) debt.push({ id, name, amt: -b });
+      });
+      cred.sort((a, b) => b.amt - a.amt);
+      debt.sort((a, b) => b.amt - a.amt);
+      const c = cred.map(x => ({ ...x })), d = debt.map(x => ({ ...x }));
+      const out = [];
+      let i = 0, j = 0;
+      while (i < c.length && j < d.length) {
+        const amt = Math.min(c[i].amt, d[j].amt);
+        if (amt > 0.5) out.push({ fromId: d[j].id, from: d[j].name, toId: c[i].id, to: c[i].name, amt: Math.round(amt * 100) / 100 });
+        c[i].amt -= amt; d[j].amt -= amt;
+        if (c[i].amt < 0.5) i++;
+        if (d[j].amt < 0.5) j++;
+      }
+      return out;
+    }
+
+    /* ================================================================
+       FORMATTING
+    ================================================================ */
+    const fmtTRY = n => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(n);
+    const fmtEUR = n => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(n);
+    const fmt = (n, cur) => cur === 'TRY' ? fmtTRY(n) : fmtEUR(n);
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+    const initials = name => name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const famOf = f => FAM[f] || FAM._;
+
+    /* ================================================================
+       RENDER
+    ================================================================ */
+    function render(data) {
+      _data = data;
+      renderHeader(data);
+      renderStats(data);
+      renderCurrency(data, 'TRY');
+      renderCurrency(data, 'EUR');
+      renderExpenses();
+      document.getElementById('st-loading').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+    }
+
+    function renderHeader(d) {
+      document.getElementById('h-dest').textContent = d.destination || '📍 Tatil';
+      document.getElementById('h-title').textContent = d.tripName || 'Tatil Harcama Takibi';
+      document.title = d.tripName || 'Tatil Harcama Takibi';
+      const dates = [d.startDate, d.endDate].filter(Boolean)
+        .map(x => new Date(x).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })).join(' – ');
+      document.getElementById('h-dates').textContent = dates || '—';
+      document.getElementById('h-persons').textContent = (d.persons?.length || 0) + ' kişi';
+      const fams = [...new Set((d.persons || []).map(p => p.family))];
+      document.getElementById('h-families').textContent = fams.length + ' aile';
+      document.getElementById('h-updated').textContent = fmtDate(d.lastUpdated);
+      document.getElementById('h-version').textContent = 'v' + (d.version || '1');
+    }
+
+    function renderStats(d) {
+      const tryTot = d.expenses.filter(e => e.currency === 'TRY').reduce((s, e) => s + e.totalAmount, 0);
+      const eurTot = d.expenses.filter(e => e.currency === 'EUR').reduce((s, e) => s + e.totalAmount, 0);
+      document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--try)">${fmtTRY(tryTot)}</div>
+      <div class="stat-label">Toplam ₺ Harcama</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--eur)">${fmtEUR(eurTot)}</div>
+      <div class="stat-label">Toplam € Harcama</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${d.expenses.length}</div>
+      <div class="stat-label">Harcama Kalemi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${d.persons?.length || 0}</div>
+      <div class="stat-label">Katılımcı</div>
+    </div>`;
+    }
+
+    function renderCurrency(d, cur) {
+      const has = d.expenses.some(e => e.currency === cur);
+      const secId = cur === 'TRY' ? 'try-section' : 'eur-section';
+      if (!has) { document.getElementById(secId).classList.add('hidden'); return; }
+
+      const { paid, share, net, heads } = calcBalances(d, cur);
+      const isTRY = cur === 'TRY';
+
+      // Balance table (Showing only Family Representatives/Heads)
+      const tblId = isTRY ? 'try-tbl' : 'eur-tbl';
+      document.querySelector('#' + tblId + ' tbody').innerHTML = Object.values(heads).map(head => {
+        const fam = famOf(head.family);
+        const n = net[head.id] || 0;
+        const cls = n > 0.5 ? 'bal-pos' : n < -0.5 ? 'bal-neg' : 'bal-zer';
+        const lbl = n > 0.5 ? '▲ Alacaklı' : n < -0.5 ? '▼ Borçlu' : '— Denkler';
+        return `<tr>
+      <td><div class="person-cell">
+        <div class="avatar avatar-sm" style="background:${fam.bg};color:${fam.color}">${initials(head.name)}</div>
+        <div>
+          <div style="font-weight:600">${head.name}</div>
+          <div style="font-size:.72rem;color:var(--text-3)">${fam.label} Temsilcisi</div>
+        </div>
+      </div></td>
+      <td class="text-right" style="font-size:.875rem">${fmt(paid[head.id] || 0, cur)}</td>
+      <td class="text-right" style="font-size:.875rem">${fmt(share[head.id] || 0, cur)}</td>
+      <td class="text-right ${cls}">
+        <div>${n > 0.5 ? '+' : ''}${fmt(Math.abs(n), cur)}</div>
+        <div style="font-size:.68rem;font-weight:400;opacity:.8">${lbl}</div>
+      </td>
+    </tr>`;
+      }).join('');
+
+      // Settlement (Only between Family Representatives/Heads)
+      const settleId = isTRY ? 'try-settle' : 'eur-settle';
+      const transfers = settlement(net, Object.values(heads));
+      const el = document.getElementById(settleId);
+
+      if (!transfers.length) {
+        el.innerHTML = `<div class="settle-empty">
+      <div style="font-size:1.5rem">✅</div>
+      <div>Herkes hesabını tamamlamış!</div>
+    </div>`;
+        return;
+      }
+
+      el.innerHTML = transfers.map((t, i) => {
+        const fromFam = famOf(d.persons.find(p => p.id === t.fromId)?.family);
+        const toFam = famOf(d.persons.find(p => p.id === t.toId)?.family);
+        return `<div class="transfer-row animate-in" style="animation-delay:${i * 60}ms">
+      <div class="transfer-from-to">
+        <div class="transfer-person">
+          <div class="avatar avatar-sm" style="background:${fromFam.bg};color:${fromFam.color}">${initials(t.from)}</div>
+          ${t.from}
+        </div>
+        <span class="transfer-arrow">→</span>
+        <div class="transfer-person">
+          <div class="avatar avatar-sm" style="background:${toFam.bg};color:${toFam.color}">${initials(t.to)}</div>
+          ${t.to}
+        </div>
+      </div>
+      <div class="transfer-amount" style="color:var(--${isTRY ? 'try' : 'eur'})">${fmt(t.amt, cur)}</div>
+    </div>`;
+      }).join('');
+    }
+
+    function renderExpenses() {
+      if (!_data) return;
+      const list = _filter === 'all' ? _data.expenses : _data.expenses.filter(e => e.currency === _filter);
+      const sorted = [...list].sort((a, b) => new Date(b.date) - new Date(a.date));
+      const el = document.getElementById('exp-list');
+
+      if (!sorted.length) {
+        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-3)">Harcama bulunamadı.</div>`;
+        return;
+      }
+
+      el.innerHTML = sorted.map((exp, i) => {
+        const cat = CAT[exp.category] || CAT.other;
+        const payer = _data.persons.find(p => p.id === exp.paidBy);
+        const payFam = famOf(payer?.family);
+        const isTRY = exp.currency === 'TRY';
+
+        const shareItems = Object.entries(exp.shares || {}).map(([pid, s]) => {
+          const p = _data.persons.find(x => x.id === pid);
+          if (!p) return '';
+          const f = famOf(p.family);
+          const val = +s || 0;
+          return `<div class="share-item">
+        <div class="share-person">
+          <div class="avatar" style="width:20px;height:20px;font-size:.6rem;background:${f.bg};color:${f.color}">${initials(p.name)}</div>
+          <span class="share-name">${p.name}</span>
+        </div>
+        <div class="share-amt" style="${val === 0 ? 'color:var(--text-3)' : ''}">${fmt(val, exp.currency)}</div>
+      </div>`;
+        }).join('');
+
+        return `<div class="exp-card animate-in" style="animation-delay:${i * 35}ms" onclick="toggleExp(this)">
+      <div class="exp-head">
+        <div class="exp-icon" style="background:${cat.bg}">${cat.icon}</div>
+        <div class="exp-info">
+          <div class="exp-title">${exp.title}</div>
+          <div class="exp-meta">
+            <span class="badge ${isTRY ? 'badge-try' : 'badge-eur'}" style="font-size:.7rem">${cat.label}</span>
+            ${fmtDate(exp.date)}
+          </div>
+        </div>
+        <div class="exp-right">
+          <div class="exp-amount" style="color:var(--${isTRY ? 'try' : 'eur'})">${fmt(exp.totalAmount, exp.currency)}</div>
+          <div class="exp-payer">
+            <div class="avatar" style="width:16px;height:16px;font-size:.55rem;background:${payFam.bg};color:${payFam.color}">${initials(payer?.name || '?')}</div>
+            ${payer?.name || '?'} ödedi
+          </div>
+        </div>
+        <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="exp-body">
+        ${exp.notes ? `<div class="exp-note">💬 ${exp.notes}</div>` : ''}
+        <div style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Kişi Payları</div>
+        <div class="shares-grid">${shareItems}</div>
+      </div>
+    </div>`;
+      }).join('');
+    }
+
+    function toggleExp(card) {
+      card.classList.toggle('open');
+    }
+
+    function setFilter(btn, f) {
+      _filter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderExpenses();
+    }
+
+    /* ================================================================
+       TOAST
+    ================================================================ */
+    function toast(msg, type = 'info', ms = 3500) {
+      const c = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = `toast toast-${type}`;
+      el.textContent = msg;
+      c.appendChild(el);
+      setTimeout(() => { el.style.cssText = 'opacity:0;transform:translateY(8px);transition:all .3s ease'; setTimeout(() => el.remove(), 320); }, ms);
+    }
+
+    /* ================================================================
+       THEME TOGGLER
+    ================================================================ */
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('tatil_theme', next);
+      updateThemeButton();
+    }
+
+    function updateThemeButton() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const btn = document.getElementById('theme-toggle-btn');
+      if (btn) {
+        btn.textContent = current === 'dark' ? '☀️ Açık Tema' : '🌙 Koyu Tema';
+      }
+    }
+
+    /* ================================================================
+       INIT
+    ================================================================ */
+    window.addEventListener('load', async () => {
+      updateThemeButton();
+      const d = await loadData();
+      if (d && d.persons && d.expenses) {
+        render(d);
+      } else {
+        document.getElementById('st-loading').classList.add('hidden');
+        document.getElementById('st-error').classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+
+</html>

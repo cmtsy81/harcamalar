@@ -1,0 +1,90 @@
+{
+  "tripName": "Yaz Tatili 2026",
+  "destination": "Yunanistan 🇬🇷",
+  "startDate": "2026-07-20",
+  "endDate": "2026-07-27",
+  "lastUpdated": "2026-07-16",
+  "version": 1,
+  "persons": [
+    { "id": "cem",    "name": "Cem",    "family": "A", "type": "adult" },
+    { "id": "zeynep", "name": "Zeynep", "family": "A", "type": "adult" },
+    { "id": "can",    "name": "Can",    "family": "A", "type": "child" },
+    { "id": "ali",    "name": "Ali",    "family": "B", "type": "adult" },
+    { "id": "fatma",  "name": "Fatma",  "family": "B", "type": "adult" },
+    { "id": "defne",  "name": "Defne",  "family": "B", "type": "child" }
+  ],
+  "expenses": [
+    {
+      "id": "exp1",
+      "title": "Uçak Biletleri",
+      "currency": "TRY",
+      "totalAmount": 110000,
+      "paidBy": "cem",
+      "date": "2026-07-10",
+      "category": "transport",
+      "notes": "Aile A: 56.000 ₺, Aile B: 54.000 ₺ (Defne bileti 2.000 ₺ daha ucuz)",
+      "shares": {
+        "cem":    18667,
+        "zeynep": 18667,
+        "can":    18666,
+        "ali":    18000,
+        "fatma":  18000,
+        "defne":  18000
+      }
+    },
+    {
+      "id": "exp2",
+      "title": "Tatil Evi Kirası",
+      "currency": "TRY",
+      "totalAmount": 80000,
+      "paidBy": "cem",
+      "date": "2026-07-15",
+      "category": "accommodation",
+      "notes": "Aile başına 40.000 ₺ eşit bölüşüm",
+      "shares": {
+        "cem":    13334,
+        "zeynep": 13333,
+        "can":    13333,
+        "ali":    13334,
+        "fatma":  13333,
+        "defne":  13333
+      }
+    },
+    {
+      "id": "exp3",
+      "title": "Müze Girişleri",
+      "currency": "EUR",
+      "totalAmount": 92,
+      "paidBy": "ali",
+      "date": "2026-07-22",
+      "category": "activity",
+      "notes": "Yetişkin: 20€, Can: 12€, Defne: Ücretsiz",
+      "shares": {
+        "cem":    20,
+        "zeynep": 20,
+        "can":    12,
+        "ali":    20,
+        "fatma":  20,
+        "defne":  0
+      }
+    },
+    {
+      "id": "exp4",
+      "title": "Süpermarket Alışverişi",
+      "currency": "EUR",
+      "totalAmount": 200,
+      "paidBy": "fatma",
+      "date": "2026-07-23",
+      "category": "food",
+      "notes": "Haftalık erzak, eşit paylaşım",
+      "shares": {
+        "cem":    34,
+        "zeynep": 33,
+        "can":    33,
+        "ali":    34,
+        "fatma":  33,
+        "defne":  33
+      }
+    }
+  ]
+}

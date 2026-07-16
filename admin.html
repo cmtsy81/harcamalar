@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yönetim Paneli — Tatil Kasası</title>
+  <meta name="description" content="Tatil harcama yönetim paneli. Harcama ekle, düzenle, sil ve kişi paylarını ayarla.">
+  <script>
+    // Immediate theme logic to prevent flashing
+    const savedTheme = localStorage.getItem('tatil_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background:
+        radial-gradient(ellipse at 100% 0%,   rgba(245,158,11,.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 0%   100%,  rgba(99,102,241,.07) 0%, transparent 50%),
+        var(--bg);
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg-bar);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+    }
+    .top-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; gap: 14px; flex-wrap: wrap;
+    }
+    .top-logo { display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem;color:var(--text-1);text-decoration:none; }
+    .top-logo span { color:var(--text-3);font-weight:400;font-size:.875rem; }
+    .top-actions { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
+    .save-dot {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: .75rem; color: var(--green); padding: 4px 10px;
+      background: var(--green-soft); border-radius: var(--r-full);
+    }
+    .save-dot::before { content:''; display:block;width:6px;height:6px;border-radius:50%;background:var(--green); }
+
+    /* LAYOUT */
+    .main-wrap { padding: 32px 0; }
+    .tab-content { display:none; margin-top: 24px; }
+    .tab-content.active { display:block; }
+
+    /* EXPENSE LIST */
+    .exp-item {
+      display:flex; align-items:center; gap:14px;
+      padding: 16px 20px;
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: var(--r-xl); transition: all var(--t-norm);
+    }
+    .exp-item:hover { background: var(--glass-hover); border-color: var(--border-hover); }
+    .exp-icon-sm {
+      width: 40px; height: 40px; border-radius: var(--r-md);
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.2rem; flex-shrink:0;
+    }
+    .exp-info { flex:1; min-width:0; }
+    .exp-title2 { font-weight:600; font-size:.9375rem; white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .exp-meta2  { font-size:.78rem; color:var(--text-2); margin-top:2px; display:flex;align-items:center;gap:6px;flex-wrap:wrap; }
+    .exp-amt    { font-weight:700; font-size:1rem; text-align:right; white-space:nowrap; }
+    .exp-actions{ display:flex;gap:6px;flex-shrink:0; }
+
+    /* PERSON LIST */
+    .person-item {
+      display:flex; align-items:center; gap:14px; padding: 14px 18px;
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: var(--r-xl); transition: all var(--t-norm);
+    }
+    .person-item:hover { background:var(--glass-hover);border-color:var(--border-hover); }
+    .person-info { flex:1; }
+    .person-name { font-weight:600; font-size:.9375rem; }
+    .person-meta { font-size:.78rem; color:var(--text-2); margin-top:2px; }
+
+    /* SHARES TABLE */
+    .shares-wrap {
+      border: 1px solid var(--border); border-radius: var(--r-xl);
+      overflow: hidden; margin-top: 14px;
+    }
+    .share-row {
+      display:grid; grid-template-columns: 1fr 140px 60px;
+      align-items:center; gap:10px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+    }
+    .share-row:last-child { border-bottom:none; }
+    .share-row-head { background:var(--bg-3); }
+    .share-row-head span { font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em; }
+    .share-pct { font-size:.8125rem; color:var(--text-2); text-align:right; white-space:nowrap; }
+
+    /* VALIDATION BAR */
+    .val-bar {
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 14px; border-radius: var(--r-md); margin-top:10px;
+      font-size:.875rem; font-weight:500; gap:10px; flex-wrap:wrap;
+      border: 1px solid transparent; transition: all var(--t-fast);
+    }
+    .val-ok    { background:var(--green-soft); border-color:rgba(16,185,129,.3); color:var(--green); }
+    .val-error { background:var(--red-soft);   border-color:rgba(244,63,94,.3);  color:var(--red);  }
+    .val-warn  { background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:var(--try); }
+
+    /* FAMILY SPLIT HELPER */
+    .fam-split-box {
+      background:var(--bg-3); border:1px solid var(--border);
+      border-radius: var(--r-lg); padding: 14px 16px; margin-top:10px;
+      display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    }
+    .fam-split-box .fam-label { font-size:.8rem;font-weight:600;margin-bottom:4px; display:flex;align-items:center;gap:6px; }
+    .fam-split-box .fam-per   { font-size:.78rem;color:var(--text-2);margin-top:4px; }
+    .fam-split-btn-row { grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:4px; }
+
+    /* FORM GRID */
+    .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+    .col-span-2  { grid-column:1/-1; }
+
+    /* SETTINGS CARD */
+    .settings-card {
+      background:var(--glass); border:1px solid var(--border);
+      border-radius:var(--r-2xl); padding:28px;
+    }
+
+    /* EMPTY STATE */
+    .empty {
+      text-align:center; padding:48px 20px; color:var(--text-3);
+    }
+    .empty-icon { font-size:2.5rem; margin-bottom:12px; }
+
+    @media(max-width:640px){
+      .form-grid-2, .form-grid-3 { grid-template-columns:1fr; }
+      .col-span-2 { grid-column:auto; }
+      .share-row  { grid-template-columns:1fr 100px 50px; }
+      .fam-split-box { grid-template-columns:1fr; }
+      .top-actions { gap:6px; }
+      .top-actions .save-dot { display:none; }
+    }
+    @media(max-width:480px){
+      .exp-item { flex-wrap:wrap; }
+      .exp-actions { margin-left:auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="container top-inner">
+    <div>
+      <a href="index.html" class="top-logo">🌴 Tatil Kasası <span>/ Yönetim</span></a>
+    </div>
+    <div class="top-actions">
+      <span class="save-dot" id="save-indicator" style="display:none">Kaydedildi</span>
+      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500;">🌓 Tema</button>
+      <button class="btn btn-secondary btn-sm" id="btn-file-link" onclick="linkLocalFile()" style="font-weight: 600;">📂 data.json Bağla</button>
+      <label class="btn btn-secondary btn-sm" style="cursor:pointer" for="import-file">
+        📥 İçe Aktar
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(this)">
+      </label>
+      <button class="btn btn-green btn-sm" onclick="exportJSON()">📤 data.json İndir</button>
+      <a href="index.html" class="btn btn-secondary btn-sm">👁 Görüntüle</a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-wrap">
+  <div class="container">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-exp"  onclick="switchTab('exp')">💰 Harcamalar</button>
+      <button class="tab-btn"        id="tab-pers" onclick="switchTab('pers')">👥 Kişiler</button>
+      <button class="tab-btn"        id="tab-set"  onclick="switchTab('set')">⚙️ Ayarlar</button>
+    </div>
+
+    <!-- ===== EXPENSES TAB ===== -->
+    <div class="tab-content active" id="panel-exp">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <h2 id="exp-count-title">Harcamalar</h2>
+        <button class="btn btn-primary" onclick="openExpModal(null)">+ Yeni Harcama</button>
+      </div>
+      <div id="exp-list" style="display:flex;flex-direction:column;gap:10px">
+        <div class="empty"><div class="empty-icon">💸</div><p>Henüz harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>
+      </div>
+    </div>
+
+    <!-- ===== PERSONS TAB ===== -->
+    <div class="tab-content" id="panel-pers">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <h2>Kişiler</h2>
+        <button class="btn btn-primary" onclick="openPersonModal(null)">+ Kişi Ekle</button>
+      </div>
+      <div id="person-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+    <!-- ===== SETTINGS TAB ===== -->
+    <div class="tab-content" id="panel-set">
+      <h2 style="margin-bottom:20px">Tatil Ayarları</h2>
+      <div class="settings-card">
+        <div class="form-grid-2" style="gap:16px">
+          <div class="form-group">
+            <label class="form-label">Tatil Adı</label>
+            <input id="set-name" type="text" class="form-control" placeholder="Yaz Tatili 2026" oninput="saveSettings()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Destinasyon</label>
+            <input id="set-dest" type="text" class="form-control" placeholder="Yunanistan 🇬🇷" oninput="saveSettings()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Başlangıç Tarihi</label>
+            <input id="set-start" type="date" class="form-control" oninput="saveSettings()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bitiş Tarihi</label>
+            <input id="set-end" type="date" class="form-control" oninput="saveSettings()">
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-danger btn-sm" onclick="resetAll()">🗑️ Tüm Verileri Sil</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadDefaultData()">📋 Örnek Veri Yükle</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================================================
+     EXPENSE MODAL
+===================================================== -->
+<div id="exp-modal" class="modal-overlay hidden" onclick="modalOverlayClick(event,'exp-modal')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="exp-modal-title">Yeni Harcama</h3>
+      <button class="btn btn-secondary btn-icon" onclick="closeExpModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Row 1: Title -->
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Başlık *</label>
+        <input id="e-title" type="text" class="form-control" placeholder="Örn: Uçak Biletleri">
+      </div>
+
+      <!-- Row 2: Amount | Currency | Date -->
+      <div class="form-grid-3" style="margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Toplam Tutar *</label>
+          <input id="e-amount" type="number" class="form-control" placeholder="0" min="0" step="0.01" oninput="onAmountChange()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Para Birimi</label>
+          <select id="e-currency" class="form-control" onchange="onCurrencyChange()">
+            <option value="TRY">₺ Türk Lirası</option>
+            <option value="EUR">€ Euro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tarih</label>
+          <input id="e-date" type="date" class="form-control">
+        </div>
+      </div>
+
+      <!-- Row 3: Payer | Category -->
+      <div class="form-grid-2" style="margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Ödeyen *</label>
+          <select id="e-payer" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select id="e-category" class="form-control">
+            <option value="transport">✈️ Ulaşım</option>
+            <option value="accommodation">🏠 Konaklama</option>
+            <option value="food">🍽️ Yemek</option>
+            <option value="activity">🎭 Aktivite</option>
+            <option value="shopping">🛍️ Alışveriş</option>
+            <option value="health">💊 Sağlık</option>
+            <option value="other">📦 Diğer</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group" style="margin-bottom:20px">
+        <label class="form-label">Not (isteğe bağlı)</label>
+        <textarea id="e-notes" class="form-control" placeholder="Açıklama…"></textarea>
+      </div>
+
+      <!-- SHARES SECTION -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <h4>Kişi Payları</h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-xs" onclick="splitEqual()">⚖️ Herkese Eşit</button>
+          <button class="btn btn-secondary btn-xs" onclick="toggleFamSplit()">🏠 Aile Bazlı</button>
+          <button class="btn btn-secondary btn-xs" onclick="clearShares()">✕ Temizle</button>
+        </div>
+      </div>
+
+      <!-- Family Split Helper -->
+      <div id="fam-split-box" class="fam-split-box hidden">
+        <!-- Difference calculator helper -->
+        <div style="grid-column: 1 / -1; border-bottom: 1px dashed var(--border); padding-bottom: 12px; margin-bottom: 4px;">
+          <div class="fam-label" style="color: var(--text-2); font-size: 0.82rem; margin-bottom: 8px;">⚖️ Denge / Fark Hesaplayıcı (Opsiyonel)</div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 0.8125rem; color: var(--text-2);">Aile B, Aile A'dan</span>
+            <input id="fs-diff-val" type="number" class="form-control form-control-sm" placeholder="Örn: 2000" style="width: 120px;" oninput="calcFamSplitDiff()">
+            <select id="fs-diff-dir" class="form-control form-control-sm" style="width: 120px;" onchange="calcFamSplitDiff()">
+              <option value="less">Daha Az</option>
+              <option value="more">Daha Fazla</option>
+            </select>
+            <span style="font-size: 0.8125rem; color: var(--text-2);">ödesin.</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="fam-label" style="color:var(--fam-a)">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--fam-a)"></span> Aile A Toplamı
+          </div>
+          <input id="fs-a" type="number" class="form-control form-control-sm" placeholder="0" min="0" step="0.01" oninput="previewFamSplit()">
+          <div class="fam-per" id="fs-a-per">Kişi başı: —</div>
+        </div>
+        <div>
+          <div class="fam-label" style="color:var(--fam-b)">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--fam-b)"></span> Aile B Toplamı
+          </div>
+          <input id="fs-b" type="number" class="form-control form-control-sm" placeholder="0" min="0" step="0.01" oninput="previewFamSplit()">
+          <div class="fam-per" id="fs-b-per">Kişi başı: —</div>
+        </div>
+        <div class="fam-split-btn-row">
+          <span id="fs-status" style="font-size:.8rem;color:var(--text-2)">A + B toplamı girilen tutarla eşleşmelidir.</span>
+          <button class="btn btn-primary btn-xs" onclick="applyFamSplit()" style="margin-left:auto">Uygula</button>
+        </div>
+      </div>
+
+      <!-- Shares Table -->
+      <div class="shares-wrap" id="shares-wrap">
+        <div class="share-row share-row-head">
+          <span>Kişi</span><span style="text-align:right">Pay</span><span style="text-align:right">%</span>
+        </div>
+        <div id="shares-body"></div>
+      </div>
+
+      <!-- Validation -->
+      <div id="val-bar" class="val-bar val-warn" style="margin-top:10px">
+        <span>Toplam: <strong id="val-sum">0</strong> / <strong id="val-target">0</strong></span>
+        <span id="val-status">Tutar girin</span>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeExpModal()">İptal</button>
+      <button class="btn btn-primary"   onclick="saveExpense()" id="save-exp-btn">💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================
+     PERSON MODAL
+===================================================== -->
+<div id="person-modal" class="modal-overlay hidden" onclick="modalOverlayClick(event,'person-modal')">
+  <div class="modal-box" style="max-width:500px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="person-modal-title">Kişi Ekle</h3>
+      <button class="btn btn-secondary btn-icon" onclick="closePersonModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2" style="gap:14px">
+        <div class="form-group col-span-2">
+          <label class="form-label">Ad Soyad *</label>
+          <input id="p-name" type="text" class="form-control" placeholder="Ad Soyad">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Aile Grubu</label>
+          <select id="p-family" class="form-control">
+            <option value="A">Aile A</option>
+            <option value="B">Aile B</option>
+            <option value="C">Aile C</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tip</label>
+          <select id="p-type" class="form-control">
+            <option value="adult">👤 Yetişkin</option>
+            <option value="child">🧒 Çocuk</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePersonModal()">İptal</button>
+      <button class="btn btn-primary"   onclick="savePerson()">💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================
+     CONFIRM MODAL
+===================================================== -->
+<div id="confirm-modal" class="modal-overlay hidden" onclick="modalOverlayClick(event,'confirm-modal')">
+  <div class="modal-box" style="max-width:420px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Emin misiniz?</h3>
+      <button class="btn btn-secondary btn-icon" onclick="closeConfirm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="color:var(--text-2);font-size:.9375rem"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Vazgeç</button>
+      <button class="btn btn-danger"    id="confirm-ok-btn">Evet, Sil</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+/* ================================================================
+   CONSTANTS
+================================================================ */
+const CAT = {
+  transport:     { icon:'✈️', label:'Ulaşım',    bg:'rgba(99,102,241,.15)'  },
+  accommodation: { icon:'🏠', label:'Konaklama', bg:'rgba(245,158,11,.12)'  },
+  food:          { icon:'🍽️', label:'Yemek',     bg:'rgba(16,185,129,.12)'  },
+  activity:      { icon:'🎭', label:'Aktivite',  bg:'rgba(129,140,248,.15)' },
+  shopping:      { icon:'🛍️', label:'Alışveriş', bg:'rgba(251,191,36,.12)'  },
+  health:        { icon:'💊', label:'Sağlık',    bg:'rgba(244,63,94,.12)'   },
+  other:         { icon:'📦', label:'Diğer',     bg:'rgba(100,116,139,.12)' }
+};
+const FAM = {
+  A: { bg:'rgba(129,140,248,.18)', color:'#818CF8', label:'Aile A' },
+  B: { bg:'rgba(245,158,11,.18)',  color:'#F59E0B', label:'Aile B' },
+  C: { bg:'rgba(16,185,129,.18)',  color:'#10B981', label:'Aile C' },
+  _: { bg:'rgba(100,116,139,.18)',color:'#94A3B8', label:'Aile ?'  }
+};
+const famOf = f => FAM[f] || FAM._;
+const initials = n => n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const fmtTRY = n => new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:0}).format(n);
+const fmtEUR = n => new Intl.NumberFormat('tr-TR',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(n);
+const fmt = (n,c) => c==='TRY'?fmtTRY(n):fmtEUR(n);
+const uid = () => 'id_' + Math.random().toString(36).slice(2,9);
+
+const LS_KEY = 'tatil_harcama_data';
+
+/* ================================================================
+   STATE & VARIABLES
+================================================================ */
+let S = {
+  tripName: '', destination: '', startDate: '', endDate: '',
+  lastUpdated: new Date().toISOString(),
+  version: 1,
+  persons: [], expenses: []
+};
+
+let editExpId   = null;  // null = new expense
+let editPersonId = null; // null = new person
+let famSplitVisible = false;
+let localFileHandle = null;
+
+/* ================================================================
+   INDEXEDDB (File Handle Persistence)
+================================================================ */
+const dbName = "TatilFSDB";
+const storeName = "Handles";
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(storeName);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function getSavedFileHandle() {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readonly");
+      const req = tx.objectStore(storeName).get("dataJson");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  } catch (e) {
+    console.warn("IndexedDB handle read error:", e);
+    return null;
+  }
+}
+
+async function saveFileHandle(handle) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readwrite");
+      const req = tx.objectStore(storeName).put(handle, "dataJson");
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB handle write error:", e);
+  }
+}
+
+/* ================================================================
+   FILE ACCESS & AUTO-SAVE
+================================================================ */
+async function checkFileLinkStatus() {
+  const btn = document.getElementById('btn-file-link');
+  if (!btn) return;
+  
+  if (!localFileHandle) {
+    btn.textContent = "📂 data.json Bağla";
+    btn.className = "btn btn-secondary btn-sm";
+    return;
+  }
+  
+  try {
+    const options = { mode: 'readwrite' };
+    const perm = await localFileHandle.queryPermission(options);
+    if (perm === 'granted') {
+      btn.textContent = "🟢 data.json Bağlı";
+      btn.className = "btn btn-green btn-sm";
+    } else {
+      btn.textContent = "🟡 Bağlantıyı Onayla";
+      btn.className = "btn btn-try btn-sm";
+    }
+  } catch (e) {
+    btn.textContent = "📂 data.json Bağla";
+    btn.className = "btn btn-secondary btn-sm";
+  }
+}
+
+async function linkLocalFile() {
+  try {
+    const [handle] = await window.showOpenFilePicker({
+      types: [{
+        description: 'JSON Files',
+        accept: { 'application/json': ['.json'] }
+      }],
+      excludeAcceptAllOption: true,
+      multiple: false
+    });
+    
+    if (handle) {
+      localFileHandle = handle;
+      await saveFileHandle(handle);
+      
+      const options = { mode: 'readwrite' };
+      const perm = await localFileHandle.requestPermission(options);
+      if (perm === 'granted') {
+        toast('Dosya başarıyla bağlandı! Değişiklikler anında yazılacaktır.', 'success');
+        const file = await localFileHandle.getFile();
+        const text = await file.text();
+        if (text.trim()) {
+          try {
+            S = JSON.parse(text);
+            localStorage.setItem(LS_KEY, JSON.stringify(S));
+            renderAll();
+            toast('Dosyadaki güncel veriler yüklendi', 'success');
+          } catch(err) {
+            toast('Bağlanan dosya içeriği geçersiz JSON, mevcut verilerle devam ediliyor', 'warn');
+          }
+        }
+      }
+      await checkFileLinkStatus();
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      toast('Dosya seçimi başarısız: ' + e.message, 'error');
+    }
+  }
+}
+
+/* ================================================================
+   PERSISTENCE & SAVE
+================================================================ */
+async function save() {
+  S.version = (S.version || 0) + 1;
+  S.lastUpdated = new Date().toISOString().slice(0, 10);
+  
+  localStorage.setItem(LS_KEY, JSON.stringify(S));
+  flashSaved();
+  
+  if (localFileHandle) {
+    try {
+      const options = { mode: 'readwrite' };
+      const perm = await localFileHandle.queryPermission(options);
+      if (perm === 'granted' || await localFileHandle.requestPermission(options) === 'granted') {
+        const writable = await localFileHandle.createWritable();
+        await writable.write(JSON.stringify(S, null, 2));
+        await writable.close();
+        toast(`data.json güncellendi (v${S.version}) 💾`, 'success');
+        await checkFileLinkStatus();
+        return;
+      }
+    } catch(e) {
+      console.error(e);
+      toast('data.json dosyasına yazılamadı: ' + e.message, 'error');
+    }
+  }
+  toast(`Tarayıcıya kaydedildi (v${S.version}). Kalıcı olması için "data.json Bağla" kullanın veya JSON indirin.`, 'info');
+}
+
+function load() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (raw) { try { S = JSON.parse(raw); return true; } catch(e){} }
+  return false;
+}
+
+function flashSaved() {
+  const el = document.getElementById('save-indicator');
+  if (el) {
+    el.style.display = 'inline-flex';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.display='none'; }, 2500);
+  }
+}
+
+function exportJSON() {
+  S.lastUpdated = new Date().toISOString().slice(0,10);
+  const blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'data.json';
+  a.click();
+  toast('data.json indirildi — şimdi repo\'ya commit edin!', 'success');
+}
+
+function importJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      S = JSON.parse(e.target.result);
+      save();
+      renderAll();
+      toast('Veriler başarıyla içe aktarıldı', 'success');
+    } catch(err) {
+      toast('Geçersiz JSON dosyası', 'error');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ================================================================
+   THEME TOGGLER
+================================================================ */
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('tatil_theme', next);
+  updateThemeButton();
+}
+
+function updateThemeButton() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) {
+    btn.textContent = current === 'dark' ? '☀️ Açık Tema' : '🌙 Koyu Tema';
+  }
+}
+
+/* ================================================================
+   TABS
+================================================================ */
+function switchTab(tab) {
+  ['exp','pers','set'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+/* ================================================================
+   RENDER ALL
+================================================================ */
+function renderAll() {
+  renderExpenses();
+  renderPersons();
+  renderSettings();
+}
+
+/* ================================================================
+   EXPENSES
+================================================================ */
+function renderExpenses() {
+  const el = document.getElementById('exp-list');
+  const count = S.expenses.length;
+  document.getElementById('exp-count-title').textContent = `Harcamalar (${count})`;
+
+  if (!count) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">💸</div><p>Henüz harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>`;
+    return;
+  }
+
+  const sorted = [...S.expenses].sort((a,b) => new Date(b.date)-new Date(a.date));
+
+  el.innerHTML = sorted.map(exp => {
+    const cat   = CAT[exp.category] || CAT.other;
+    const payer = S.persons.find(p=>p.id===exp.paidBy);
+    const payFam= famOf(payer?.family);
+    const isTRY = exp.currency==='TRY';
+    return `<div class="exp-item animate-in">
+      <div class="exp-icon-sm" style="background:${cat.bg}">${cat.icon}</div>
+      <div class="exp-info">
+        <div class="exp-title2">${exp.title}</div>
+        <div class="exp-meta2">
+          <span class="badge ${isTRY?'badge-try':'badge-eur'}" style="font-size:.68rem">${isTRY?'₺':'€'} ${exp.currency}</span>
+          ${exp.date ? new Date(exp.date).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : ''}
+          <span style="display:flex;align-items:center;gap:4px">
+            <span class="avatar" style="width:16px;height:16px;font-size:.55rem;background:${payFam.bg};color:${payFam.color}">${initials(payer?.name||'?')}</span>
+            ${payer?.name||'?'} ödedi
+          </span>
+        </div>
+      </div>
+      <div class="exp-amt" style="color:var(--${isTRY?'try':'eur'})">${fmt(exp.totalAmount,exp.currency)}</div>
+      <div class="exp-actions">
+        <button class="btn btn-secondary btn-icon btn-sm" title="Düzenle" onclick="openExpModal('${exp.id}')">✏️</button>
+        <button class="btn btn-danger btn-icon btn-sm"    title="Sil"     onclick="confirmDelete('${exp.id}','exp')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   EXPENSE MODAL
+================================================================ */
+function openExpModal(id) {
+  editExpId = id;
+  famSplitVisible = false;
+  document.getElementById('fam-split-box').classList.add('hidden');
+  document.getElementById('exp-modal-title').textContent = id ? 'Harcamayı Düzenle' : 'Yeni Harcama';
+
+  // Populate payer dropdown
+  const payer = document.getElementById('e-payer');
+  payer.innerHTML = S.persons.map(p => `<option value="${p.id}">${p.name} (${famOf(p.family).label})</option>`).join('');
+
+  if (id) {
+    const exp = S.expenses.find(e=>e.id===id);
+    if (!exp) return;
+    document.getElementById('e-title').value    = exp.title || '';
+    document.getElementById('e-amount').value   = exp.totalAmount || '';
+    document.getElementById('e-currency').value = exp.currency || 'TRY';
+    document.getElementById('e-date').value     = exp.date || '';
+    document.getElementById('e-category').value = exp.category || 'other';
+    document.getElementById('e-notes').value    = exp.notes || '';
+    payer.value = exp.paidBy || '';
+  } else {
+    document.getElementById('e-title').value    = '';
+    document.getElementById('e-amount').value   = '';
+    document.getElementById('e-currency').value = 'TRY';
+    document.getElementById('e-date').value     = new Date().toISOString().slice(0,10);
+    document.getElementById('e-category').value = 'other';
+    document.getElementById('e-notes').value    = '';
+    if (S.persons.length) payer.value = S.persons[0].id;
+  }
+
+  buildSharesTable(id ? S.expenses.find(e=>e.id===id)?.shares : null);
+  updateValidation();
+  document.getElementById('exp-modal').classList.remove('hidden');
+  document.getElementById('e-title').focus();
+}
+
+function closeExpModal() {
+  document.getElementById('exp-modal').classList.add('hidden');
+  editExpId = null;
+}
+
+function buildSharesTable(existingShares) {
+  const tbody = document.getElementById('shares-body');
+  if (!S.persons.length) {
+    tbody.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-3);font-size:.875rem">Önce Kişiler sekmesinden kişi ekleyin.</div>`;
+    return;
+  }
+  tbody.innerHTML = S.persons.map(p => {
+    const fam = famOf(p.family);
+    const val = existingShares ? (+existingShares[p.id] || 0) : 0;
+    const isChecked = existingShares ? (val > 0) : true;
+    return `<div class="share-row">
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="chk-${p.id}" class="share-chk" ${isChecked ? 'checked' : ''} onchange="togglePersonParticipation('${p.id}')" style="cursor:pointer;width:16px;height:16px;">
+        <div class="avatar avatar-sm" style="background:${fam.bg};color:${fam.color}">${initials(p.name)}</div>
+        <div>
+          <div style="font-weight:500;font-size:.875rem">${p.name}</div>
+          <div style="font-size:.72rem;color:var(--text-3)">${fam.label} · ${p.type==='adult'?'Yetişkin':'Çocuk'}</div>
+        </div>
+      </div>
+      <input type="number" class="form-control form-control-sm share-inp" id="sh-${p.id}"
+        value="${val}" min="0" step="0.01" style="text-align:right;font-weight:600"
+        ${isChecked ? '' : 'disabled'}
+        oninput="updateValidation()">
+      <div class="share-pct" id="shp-${p.id}">0%</div>
+    </div>`;
+  }).join('');
+}
+
+function togglePersonParticipation(id) {
+  const chk = document.getElementById('chk-'+id);
+  const inp = document.getElementById('sh-'+id);
+  if (chk && inp) {
+    if (!chk.checked) {
+      inp.value = 0;
+      inp.disabled = true;
+    } else {
+      inp.disabled = false;
+    }
+  }
+  updateValidation();
+}
+
+function getShareInputs() {
+  return S.persons.map(p => ({
+    id: p.id,
+    el: document.getElementById('sh-'+p.id),
+    val: +document.getElementById('sh-'+p.id)?.value || 0
+  }));
+}
+
+function updateValidation() {
+  const total = +document.getElementById('e-amount').value || 0;
+  const cur   = document.getElementById('e-currency').value;
+  const inputs = getShareInputs();
+  let sum = 0;
+  inputs.forEach(({id, val}) => {
+    sum += val;
+    const pctEl = document.getElementById('shp-'+id);
+    if (pctEl) pctEl.textContent = total > 0 ? ((val/total)*100).toFixed(1)+'%' : '0%';
+  });
+
+  const diff = Math.abs(sum - total);
+  const bar  = document.getElementById('val-bar');
+  const fmtd = fmt(sum, cur);
+  const fmtt = fmt(total, cur);
+  document.getElementById('val-sum').textContent    = fmtd;
+  document.getElementById('val-target').textContent = fmtt;
+
+  if (total === 0) {
+    bar.className = 'val-bar val-warn';
+    document.getElementById('val-status').textContent = '⚠️ Tutar girin';
+  } else if (diff < 2) {
+    bar.className = 'val-bar val-ok';
+    document.getElementById('val-status').textContent = '✓ Dengeli';
+  } else {
+    bar.className = 'val-bar val-error';
+    const sign = sum > total ? '+' : '';
+    document.getElementById('val-status').textContent = `⚠️ Fark: ${sign}${fmt(sum-total, cur)}`;
+  }
+}
+
+function onAmountChange() {
+  updateValidation();
+  // Update family split preview if visible
+  if (famSplitVisible) previewFamSplit();
+}
+function onCurrencyChange() { updateValidation(); }
+
+function splitEqual() {
+  const total = +document.getElementById('e-amount').value || 0;
+  if (!total) { toast('Önce toplam tutar girin','error'); return; }
+
+  const activePersons = S.persons.filter(p => {
+    const chk = document.getElementById('chk-'+p.id);
+    return chk ? chk.checked : true;
+  });
+
+  const n = activePersons.length;
+  if (!n) { toast('En az 1 katılımcı seçmelisiniz','error'); return; }
+
+  const base = Math.floor((total / n) * 100) / 100;
+  const rem  = Math.round((total - base * n) * 100) / 100;
+
+  // Clear everyone
+  S.persons.forEach(p => {
+    const inp = document.getElementById('sh-'+p.id);
+    if (inp) inp.value = 0;
+  });
+
+  // Assign to active ones
+  activePersons.forEach((p, i) => {
+    const inp = document.getElementById('sh-'+p.id);
+    if (inp) inp.value = i === 0 ? +(base + rem).toFixed(2) : +base.toFixed(2);
+  });
+
+  updateValidation();
+  toast('Eşit bölüşüm uygulandı','success');
+}
+
+function clearShares() {
+  S.persons.forEach(p => {
+    const inp = document.getElementById('sh-'+p.id);
+    if (inp) inp.value = 0;
+  });
+  updateValidation();
+}
+
+function toggleFamSplit() {
+  famSplitVisible = !famSplitVisible;
+  document.getElementById('fam-split-box').classList.toggle('hidden', !famSplitVisible);
+  if (famSplitVisible) {
+    // Clear diff fields
+    const valInp = document.getElementById('fs-diff-val');
+    if (valInp) valInp.value = '';
+    // Pre-fill with current total if 50/50
+    const total = +document.getElementById('e-amount').value || 0;
+    if (total > 0) {
+      const half = (total / 2).toFixed(2);
+      document.getElementById('fs-a').value = half;
+      document.getElementById('fs-b').value = half;
+      previewFamSplit();
+    }
+  }
+}
+
+function calcFamSplitDiff() {
+  const total = +document.getElementById('e-amount').value || 0;
+  const diffVal = +document.getElementById('fs-diff-val').value || 0;
+  const diffDir = document.getElementById('fs-diff-dir').value; // 'less' or 'more'
+
+  if (total <= 0) return;
+
+  let sa, sb;
+  if (diffDir === 'less') {
+    sa = (total + diffVal) / 2;
+    sb = total - sa;
+  } else {
+    sa = (total - diffVal) / 2;
+    sb = total - sa;
+  }
+
+  if (sa < 0 || sb < 0) {
+    if (diffDir === 'less') {
+      sa = total; sb = 0;
+    } else {
+      sa = 0; sb = total;
+    }
+  }
+
+  document.getElementById('fs-a').value = Math.round(sa * 100) / 100;
+  document.getElementById('fs-b').value = Math.round(sb * 100) / 100;
+  previewFamSplit();
+}
+
+function previewFamSplit() {
+  const total = +document.getElementById('e-amount').value || 0;
+  const cur   = document.getElementById('e-currency').value;
+  
+  // Only count participating family members
+  const famA  = S.persons.filter(p => p.family==='A' && document.getElementById('chk-'+p.id)?.checked);
+  const famB  = S.persons.filter(p => p.family==='B' && document.getElementById('chk-'+p.id)?.checked);
+  
+  const tA = +document.getElementById('fs-a').value || 0;
+  const tB = +document.getElementById('fs-b').value || 0;
+
+  const perA = famA.length ? tA / famA.length : 0;
+  const perB = famB.length ? tB / famB.length : 0;
+  document.getElementById('fs-a-per').textContent = `Kişi başı (${famA.length} kişi): ~${fmt(perA,cur)}`;
+  document.getElementById('fs-b-per').textContent = `Kişi başı (${famB.length} kişi): ~${fmt(perB,cur)}`;
+
+  const diff = Math.abs((tA+tB) - total);
+  const st   = document.getElementById('fs-status');
+  if (diff < 2) {
+    st.textContent = `✓ ${fmt(tA,cur)} + ${fmt(tB,cur)} = ${fmt(total,cur)}`;
+    st.style.color = 'var(--green)';
+  } else {
+    st.textContent = `⚠️ Toplam: ${fmt(tA+tB,cur)} / Beklenen: ${fmt(total,cur)}`;
+    st.style.color = 'var(--red)';
+  }
+}
+
+function applyFamSplit() {
+  const tA = +document.getElementById('fs-a').value || 0;
+  const tB = +document.getElementById('fs-b').value || 0;
+
+  // Only distribute among participating members
+  const famA = S.persons.filter(p => p.family==='A' && document.getElementById('chk-'+p.id)?.checked);
+  const famB = S.persons.filter(p => p.family==='B' && document.getElementById('chk-'+p.id)?.checked);
+
+  if (tA > 0 && !famA.length) {
+    toast('Aile A için pay girildi ama katılan üye seçilmedi!', 'error');
+    return;
+  }
+  if (tB > 0 && !famB.length) {
+    toast('Aile B için pay girildi ama katılan üye seçilmedi!', 'error');
+    return;
+  }
+
+  function distribute(persons, totalAmt) {
+    const n    = persons.length;
+    if (!n) return;
+    const base = Math.floor((totalAmt / n) * 100) / 100;
+    const rem  = Math.round((totalAmt - base * n) * 100) / 100;
+    persons.forEach((p, i) => {
+      const inp = document.getElementById('sh-'+p.id);
+      if (inp) inp.value = i===0 ? +(base+rem).toFixed(2) : +base.toFixed(2);
+    });
+  }
+
+  // Clear everyone first
+  S.persons.forEach(p => {
+    const inp = document.getElementById('sh-'+p.id);
+    if (inp) inp.value = 0;
+  });
+
+  distribute(famA, tA);
+  distribute(famB, tB);
+  updateValidation();
+  toast('Aile bazlı bölüşüm uygulandı','success');
+}
+
+function saveExpense() {
+  const title  = document.getElementById('e-title').value.trim();
+  const amount = +document.getElementById('e-amount').value;
+  const payer  = document.getElementById('e-payer').value;
+  const cur    = document.getElementById('e-currency').value;
+
+  if (!title)  { toast('Başlık zorunlu','error'); return; }
+  if (!amount) { toast('Tutar zorunlu','error'); return; }
+  if (!payer)  { toast('Ödeyen zorunlu','error'); return; }
+
+  const inputs = getShareInputs();
+  const sum    = inputs.reduce((s,x)=>s+x.val, 0);
+  if (Math.abs(sum - amount) >= 2) {
+    toast(`Paylar toplamı (${fmt(sum,cur)}) tutarla eşleşmiyor (${fmt(amount,cur)})`, 'error');
+    return;
+  }
+
+  const shares = {};
+  inputs.forEach(({id, val}) => shares[id] = val);
+
+  const data = {
+    title, currency: cur,
+    totalAmount: amount,
+    paidBy: payer,
+    date:     document.getElementById('e-date').value,
+    category: document.getElementById('e-category').value,
+    notes:    document.getElementById('e-notes').value.trim(),
+    shares
+  };
+
+  if (editExpId) {
+    const idx = S.expenses.findIndex(e=>e.id===editExpId);
+    if (idx !== -1) S.expenses[idx] = { ...S.expenses[idx], ...data };
+  } else {
+    S.expenses.push({ id: uid(), ...data });
+  }
+
+  save();
+  renderExpenses();
+  closeExpModal();
+  toast(editExpId ? 'Harcama güncellendi' : 'Harcama eklendi', 'success');
+}
+
+/* ================================================================
+   PERSONS
+================================================================ */
+function renderPersons() {
+  const el = document.getElementById('person-list');
+  if (!S.persons.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><p>Henüz kişi yok.<br>Yukarıdaki butona tıklayın.</p></div>`;
+    return;
+  }
+  el.innerHTML = S.persons.map(p => {
+    const fam = famOf(p.family);
+    return `<div class="person-item animate-in">
+      <div class="avatar avatar-md" style="background:${fam.bg};color:${fam.color}">${initials(p.name)}</div>
+      <div class="person-info">
+        <div class="person-name">${p.name}</div>
+        <div class="person-meta">${fam.label} · ${p.type==='adult'?'👤 Yetişkin':'🧒 Çocuk'}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-icon btn-sm" onclick="openPersonModal('${p.id}')">✏️</button>
+        <button class="btn btn-danger btn-icon btn-sm"    onclick="confirmDelete('${p.id}','person')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openPersonModal(id) {
+  editPersonId = id;
+  document.getElementById('person-modal-title').textContent = id ? 'Kişiyi Düzenle' : 'Kişi Ekle';
+  if (id) {
+    const p = S.persons.find(x=>x.id===id);
+    if (!p) return;
+    document.getElementById('p-name').value   = p.name;
+    document.getElementById('p-family').value = p.family;
+    document.getElementById('p-type').value   = p.type;
+  } else {
+    document.getElementById('p-name').value   = '';
+    document.getElementById('p-family').value = 'A';
+    document.getElementById('p-type').value   = 'adult';
+  }
+  document.getElementById('person-modal').classList.remove('hidden');
+  document.getElementById('p-name').focus();
+}
+
+function closePersonModal() {
+  document.getElementById('person-modal').classList.add('hidden');
+  editPersonId = null;
+}
+
+function savePerson() {
+  const name   = document.getElementById('p-name').value.trim();
+  const family = document.getElementById('p-family').value;
+  const type   = document.getElementById('p-type').value;
+  if (!name) { toast('İsim zorunlu','error'); return; }
+
+  if (editPersonId) {
+    const idx = S.persons.findIndex(p=>p.id===editPersonId);
+    if (idx !== -1) S.persons[idx] = { ...S.persons[idx], name, family, type };
+  } else {
+    S.persons.push({ id: uid(), name, family, type });
+  }
+
+  save();
+  renderPersons();
+  closePersonModal();
+  toast(editPersonId ? 'Kişi güncellendi' : 'Kişi eklendi', 'success');
+}
+
+/* ================================================================
+   SETTINGS
+================================================================ */
+function renderSettings() {
+  document.getElementById('set-name').value  = S.tripName    || '';
+  document.getElementById('set-dest').value  = S.destination || '';
+  document.getElementById('set-start').value = S.startDate   || '';
+  document.getElementById('set-end').value   = S.endDate     || '';
+}
+
+function saveSettings() {
+  S.tripName    = document.getElementById('set-name').value.trim();
+  S.destination = document.getElementById('set-dest').value.trim();
+  S.startDate   = document.getElementById('set-start').value;
+  S.endDate     = document.getElementById('set-end').value;
+  save();
+}
+
+function resetAll() {
+  showConfirm('Tüm harcama ve kişi verileri silinecek. Bu işlem geri alınamaz!', () => {
+    S = { tripName:'',destination:'',startDate:'',endDate:'',lastUpdated:'',persons:[],expenses:[] };
+    save(); renderAll();
+    toast('Tüm veriler silindi','info');
+  });
+}
+
+async function loadDefaultData() {
+  try {
+    const r = await fetch('data.json?v='+Date.now(), {cache:'no-store'});
+    if (!r.ok) throw new Error();
+    S = await r.json();
+    save(); renderAll();
+    toast('Örnek veriler yüklendi','success');
+  } catch(e) {
+    toast('data.json bulunamadı — sayfayı bir web sunucusuyla açın','error');
+  }
+}
+
+/* ================================================================
+   CONFIRM MODAL
+================================================================ */
+function showConfirm(msg, onOk) {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok-btn').onclick  = () => { onOk(); closeConfirm(); };
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.add('hidden');
+}
+
+function confirmDelete(id, type) {
+  const label = type==='exp'
+    ? S.expenses.find(e=>e.id===id)?.title || 'bu harcama'
+    : S.persons.find(p=>p.id===id)?.name   || 'bu kişi';
+  showConfirm(`"${label}" silinecek. Emin misiniz?`, () => {
+    if (type==='exp')    { S.expenses = S.expenses.filter(e=>e.id!==id); save(); renderExpenses(); toast('Harcama silindi','info'); }
+    if (type==='person') { S.persons  = S.persons.filter(p=>p.id!==id);  save(); renderPersons();  toast('Kişi silindi','info');   }
+  });
+}
+
+/* ================================================================
+   MODAL OVERLAY CLICK
+================================================================ */
+function modalOverlayClick(e, id) {
+  if (e.target.id === id) {
+    document.getElementById(id).classList.add('hidden');
+    if (id==='exp-modal')    editExpId    = null;
+    if (id==='person-modal') editPersonId = null;
+  }
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+function toast(msg, type='info', ms=3500) {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(()=>{ el.style.cssText='opacity:0;transform:translateY(8px);transition:all .3s ease'; setTimeout(()=>el.remove(),320); }, ms);
+}
+
+/* ================================================================
+   KEYBOARD SHORTCUTS
+================================================================ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('exp-modal').classList.add('hidden');
+    document.getElementById('person-modal').classList.add('hidden');
+    document.getElementById('confirm-modal').classList.add('hidden');
+  }
+});
+
+/* ================================================================
+   INIT
+================================================================ */
+window.addEventListener('load', async () => {
+  updateThemeButton();
+  
+  // Restore file handle from IndexedDB
+  try {
+    const handle = await getSavedFileHandle();
+    if (handle) {
+      localFileHandle = handle;
+      await checkFileLinkStatus();
+    }
+  } catch(e) {
+    console.warn("Handle restore failed:", e);
+  }
+
+  const hasLocal = load();
+
+  if (!hasLocal) {
+    try {
+      const r = await fetch('data.json?v='+Date.now(), {cache:'no-store'});
+      if (r.ok) {
+        S = await r.json();
+        // Set basic version if missing
+        if (!S.version) S.version = 1;
+        // Save to cache/file
+        await save();
+        toast('data.json\'dan yüklendi','success');
+      }
+    } catch(e) { /* no-op */ }
+  }
+
+  renderAll();
+});
+</script>
+</body>
+</html>
