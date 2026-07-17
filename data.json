@@ -1,90 +1,210 @@
 {
   "tripName": "Yaz Tatili 2026",
-  "destination": "Yunanistan 🇬🇷",
-  "startDate": "2026-07-20",
-  "endDate": "2026-07-27",
-  "lastUpdated": "2026-07-16",
-  "version": 1,
+  "destination": "İtalya",
+  "startDate": "2026-08-28",
+  "endDate": "2026-09-12",
+  "lastUpdated": "2026-07-17",
   "persons": [
-    { "id": "cem",    "name": "Cem",    "family": "A", "type": "adult" },
-    { "id": "zeynep", "name": "Zeynep", "family": "A", "type": "adult" },
-    { "id": "can",    "name": "Can",    "family": "A", "type": "child" },
-    { "id": "ali",    "name": "Ali",    "family": "B", "type": "adult" },
-    { "id": "fatma",  "name": "Fatma",  "family": "B", "type": "adult" },
-    { "id": "defne",  "name": "Defne",  "family": "B", "type": "child" }
+    {
+      "id": "cem",
+      "name": "Cem",
+      "family": "A",
+      "type": "adult"
+    },
+    {
+      "id": "zeynep",
+      "name": "Banu",
+      "family": "A",
+      "type": "adult"
+    },
+    {
+      "id": "can",
+      "name": "Eylül",
+      "family": "A",
+      "type": "adult"
+    },
+    {
+      "id": "ali",
+      "name": "Ferhat",
+      "family": "B",
+      "type": "adult"
+    },
+    {
+      "id": "fatma",
+      "name": "Mine",
+      "family": "B",
+      "type": "adult"
+    },
+    {
+      "id": "defne",
+      "name": "Serhat",
+      "family": "B",
+      "type": "child"
+    }
   ],
   "expenses": [
     {
-      "id": "exp1",
+      "id": "id_ogaa4rk",
       "title": "Uçak Biletleri",
       "currency": "TRY",
       "totalAmount": 110000,
       "paidBy": "cem",
-      "date": "2026-07-10",
+      "date": "2026-07-16",
       "category": "transport",
-      "notes": "Aile A: 56.000 ₺, Aile B: 54.000 ₺ (Defne bileti 2.000 ₺ daha ucuz)",
+      "notes": "",
       "shares": {
-        "cem":    18667,
-        "zeynep": 18667,
-        "can":    18666,
-        "ali":    18000,
-        "fatma":  18000,
-        "defne":  18000
+        "cem": 18666.68,
+        "zeynep": 18666.66,
+        "can": 18666.66,
+        "ali": 18000,
+        "fatma": 18000,
+        "defne": 18000
       }
     },
     {
-      "id": "exp2",
-      "title": "Tatil Evi Kirası",
+      "id": "id_7lijuhh",
+      "title": "Roma Airbnb",
       "currency": "TRY",
-      "totalAmount": 80000,
+      "totalAmount": 55013.69,
       "paidBy": "cem",
-      "date": "2026-07-15",
+      "date": "2026-07-16",
       "category": "accommodation",
-      "notes": "Aile başına 40.000 ₺ eşit bölüşüm",
+      "notes": "",
       "shares": {
-        "cem":    13334,
-        "zeynep": 13333,
-        "can":    13333,
-        "ali":    13334,
-        "fatma":  13333,
-        "defne":  13333
+        "cem": 9168.97,
+        "zeynep": 9168.94,
+        "can": 9168.94,
+        "ali": 9168.97,
+        "fatma": 9168.94,
+        "defne": 9168.94
       }
     },
     {
-      "id": "exp3",
-      "title": "Müze Girişleri",
+      "id": "id_ntav6wj",
+      "title": "Floransa Airbnb",
+      "currency": "TRY",
+      "totalAmount": 28608.96,
+      "paidBy": "cem",
+      "date": "2026-07-16",
+      "category": "accommodation",
+      "notes": "",
+      "shares": {
+        "cem": 4768.16,
+        "zeynep": 4768.16,
+        "can": 4768.16,
+        "ali": 4768.16,
+        "fatma": 4768.16,
+        "defne": 4768.16
+      }
+    },
+    {
+      "id": "id_5prvz2w",
+      "title": "Venedik Airbnb",
+      "currency": "TRY",
+      "totalAmount": 25006.17,
+      "paidBy": "cem",
+      "date": "2026-07-16",
+      "category": "accommodation",
+      "notes": "",
+      "shares": {
+        "cem": 4167.7,
+        "zeynep": 4167.69,
+        "can": 4167.69,
+        "ali": 4167.7,
+        "fatma": 4167.69,
+        "defne": 4167.69
+      }
+    },
+    {
+      "id": "id_8rsfrao",
+      "title": "Milano Airbnb",
+      "currency": "TRY",
+      "totalAmount": 44853.12,
+      "paidBy": "cem",
+      "date": "2026-07-16",
+      "category": "accommodation",
+      "notes": "",
+      "shares": {
+        "cem": 7475.52,
+        "zeynep": 7475.52,
+        "can": 7475.52,
+        "ali": 7475.52,
+        "fatma": 7475.52,
+        "defne": 7475.52
+      }
+    },
+    {
+      "id": "id_vq9en9g",
+      "title": "roma-floransa otobüs",
+      "currency": "TRY",
+      "totalAmount": 3771.96,
+      "paidBy": "cem",
+      "date": "2026-07-17",
+      "category": "transport",
+      "notes": "",
+      "shares": {
+        "cem": 628.66,
+        "zeynep": 628.66,
+        "can": 628.66,
+        "ali": 628.66,
+        "fatma": 628.66,
+        "defne": 628.66
+      }
+    },
+    {
+      "id": "id_661qqkc",
+      "title": "floransa - venedik treni",
       "currency": "EUR",
-      "totalAmount": 92,
-      "paidBy": "ali",
-      "date": "2026-07-22",
+      "totalAmount": 113.4,
+      "paidBy": "cem",
+      "date": "2026-07-17",
+      "category": "transport",
+      "notes": "",
+      "shares": {
+        "cem": 18.9,
+        "zeynep": 18.9,
+        "can": 18.9,
+        "ali": 18.9,
+        "fatma": 18.9,
+        "defne": 18.9
+      }
+    },
+    {
+      "id": "id_4k1v2rf",
+      "title": "venedik - milano treni",
+      "currency": "EUR",
+      "totalAmount": 125.5,
+      "paidBy": "cem",
+      "date": "2026-07-17",
+      "category": "transport",
+      "notes": "",
+      "shares": {
+        "cem": 22.9,
+        "zeynep": 22.9,
+        "can": 22.9,
+        "ali": 18.94,
+        "fatma": 18.93,
+        "defne": 18.93
+      }
+    },
+    {
+      "id": "id_w10yhzb",
+      "title": "vatikan müzeleri",
+      "currency": "EUR",
+      "totalAmount": 130,
+      "paidBy": "cem",
+      "date": "2026-07-17",
       "category": "activity",
-      "notes": "Yetişkin: 20€, Can: 12€, Defne: Ücretsiz",
+      "notes": "",
       "shares": {
-        "cem":    20,
-        "zeynep": 20,
-        "can":    12,
-        "ali":    20,
-        "fatma":  20,
-        "defne":  0
-      }
-    },
-    {
-      "id": "exp4",
-      "title": "Süpermarket Alışverişi",
-      "currency": "EUR",
-      "totalAmount": 200,
-      "paidBy": "fatma",
-      "date": "2026-07-23",
-      "category": "food",
-      "notes": "Haftalık erzak, eşit paylaşım",
-      "shares": {
-        "cem":    34,
-        "zeynep": 33,
-        "can":    33,
-        "ali":    34,
-        "fatma":  33,
-        "defne":  33
+        "cem": 21.68,
+        "zeynep": 21.66,
+        "can": 21.66,
+        "ali": 21.68,
+        "fatma": 21.66,
+        "defne": 21.66
       }
     }
-  ]
+  ],
+  "version": 56
 }

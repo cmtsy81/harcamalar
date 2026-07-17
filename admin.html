@@ -155,9 +155,11 @@
       <a href="index.html" class="top-logo">🌴 Tatil Kasası <span>/ Yönetim</span></a>
     </div>
     <div class="top-actions">
-      <span class="save-dot" id="save-indicator" style="display:none">Kaydedildi</span>
+      <span class="save-dot" id="save-indicator" style="display:none">Tarayıcıya Kaydedildi</span>
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500;">🌓 Tema</button>
       <button class="btn btn-secondary btn-sm" id="btn-file-link" onclick="linkLocalFile()" style="font-weight: 600;">📂 data.json Bağla</button>
+      <button class="btn btn-green btn-sm" id="btn-save-to-file" onclick="writeToDiskFile()" style="display:none;font-weight:700">💾 Dosyaya Kaydet</button>
+      <button class="btn btn-danger btn-sm" id="btn-revert-file" onclick="revertToDiskFile()" style="display:none" title="Değişiklikleri Geri Al (Dosyadan Yeniden Yükle)">↩️ Değişiklikleri Geri Al</button>
       <label class="btn btn-secondary btn-sm" style="cursor:pointer" for="import-file">
         📥 İçe Aktar
         <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(this)">
@@ -538,8 +540,53 @@ async function checkFileLinkStatus() {
   }
 }
 
+async function syncWithFile() {
+  const file = await localFileHandle.getFile();
+  const text = await file.text();
+  let fileData = null;
+  if (text.trim()) {
+    try { fileData = JSON.parse(text); } catch(e) {}
+  }
+
+  const fileVer = (fileData && fileData.version) || 0;
+  const localVer = S.version || 0;
+
+  // If local storage is newer or file is empty, write local to file immediately
+  if (localVer >= fileVer) {
+    const writable = await localFileHandle.createWritable();
+    await writable.write(JSON.stringify(S, null, 2));
+    await writable.close();
+    toast(`Tarayıcıdaki güncel veriler data.json dosyasına yazıldı! 💾 (v${S.version})`, 'success');
+  } else {
+    // If file is newer, load from file
+    S = fileData;
+    localStorage.setItem(LS_KEY, JSON.stringify(S));
+    renderAll();
+    hasUnsavedChanges = false;
+    toast(`Dosyadaki veriler yüklendi! 📂 (v${S.version})`, 'success');
+  }
+}
+
 async function linkLocalFile() {
   try {
+    const options = { mode: 'readwrite' };
+
+    // Eğer zaten kayıtlı bir dosya varsa ve sadece izin verilmemişse doğrudan izin iste
+    if (localFileHandle) {
+      const currentPerm = await localFileHandle.queryPermission(options);
+      if (currentPerm !== 'granted') {
+        const perm = await localFileHandle.requestPermission(options);
+        if (perm === 'granted') {
+          toast('Dosya bağlantısı onaylandı! 🟢', 'success');
+          await syncWithFile();
+          await checkFileLinkStatus();
+          updateActionButtons();
+          return;
+        }
+      }
+    }
+
+    // Yoksa veya izin verilmemişse yeni dosya seçtir
     const [handle] = await window.showOpenFilePicker({
       types: [{
         description: 'JSON Files',
@@ -553,24 +600,13 @@ async function linkLocalFile() {
       localFileHandle = handle;
       await saveFileHandle(handle);
       
-      const options = { mode: 'readwrite' };
       const perm = await localFileHandle.requestPermission(options);
       if (perm === 'granted') {
-        toast('Dosya başarıyla bağlandı! Değişiklikler anında yazılacaktır.', 'success');
-        const file = await localFileHandle.getFile();
-        const text = await file.text();
-        if (text.trim()) {
-          try {
-            S = JSON.parse(text);
-            localStorage.setItem(LS_KEY, JSON.stringify(S));
-            renderAll();
-            toast('Dosyadaki güncel veriler yüklendi', 'success');
-          } catch(err) {
-            toast('Bağlanan dosya içeriği geçersiz JSON, mevcut verilerle devam ediliyor', 'warn');
-          }
-        }
+        toast('Dosya başarıyla bağlandı! 🟢', 'success');
+        await syncWithFile();
       }
       await checkFileLinkStatus();
+      updateActionButtons();
     }
   } catch (e) {
     if (e.name !== 'AbortError') {
@@ -582,6 +618,63 @@ async function linkLocalFile() {
 /* ================================================================
    PERSISTENCE & SAVE
 ================================================================ */
+let hasUnsavedChanges = false;
+
+function updateActionButtons() {
+  const saveBtn = document.getElementById('btn-save-to-file');
+  const revBtn = document.getElementById('btn-revert-file');
+  if (!saveBtn || !revBtn) return;
+
+  if (localFileHandle && hasUnsavedChanges) {
+    saveBtn.style.display = 'inline-flex';
+    revBtn.style.display = 'inline-flex';
+  } else {
+    saveBtn.style.display = 'none';
+    revBtn.style.display = 'none';
+  }
+}
+
+async function writeToDiskFile() {
+  if (!localFileHandle) return;
+  try {
+    const options = { mode: 'readwrite' };
+    const perm = await localFileHandle.queryPermission(options);
+    if (perm === 'granted' || await localFileHandle.requestPermission(options) === 'granted') {
+      const writable = await localFileHandle.createWritable();
+      await writable.write(JSON.stringify(S, null, 2));
+      await writable.close();
+      
+      hasUnsavedChanges = false;
+      updateActionButtons();
+      await checkFileLinkStatus();
+      toast(`Değişiklikler data.json dosyasına yazıldı! 💾 (v${S.version})`, 'success');
+    }
+  } catch(e) {
+    console.error(e);
+    toast('Dosyaya yazılamadı: ' + e.message, 'error');
+  }
+}
+
+async function revertToDiskFile() {
+  if (!localFileHandle) return;
+  showConfirm("Dosyadaki son kaydedilen sürüme geri dönülecek ve kaydetmediğiniz tüm değişiklikler silinecektir. Emin misiniz?", async () => {
+    try {
+      const file = await localFileHandle.getFile();
+      const text = await file.text();
+      if (text.trim()) {
+        S = JSON.parse(text);
+        localStorage.setItem(LS_KEY, JSON.stringify(S));
+        renderAll();
+        hasUnsavedChanges = false;
+        updateActionButtons();
+        toast('Son kaydedilen dosyaya geri dönüldü ↩️', 'info');
+      }
+    } catch(e) {
+      toast('Dosyadan yükleme başarısız: ' + e.message, 'error');
+    }
+  });
+}
+
 async function save() {
   S.version = (S.version || 0) + 1;
   S.lastUpdated = new Date().toISOString().slice(0, 10);
@@ -590,23 +683,12 @@ async function save() {
   flashSaved();
   
   if (localFileHandle) {
-    try {
-      const options = { mode: 'readwrite' };
-      const perm = await localFileHandle.queryPermission(options);
-      if (perm === 'granted' || await localFileHandle.requestPermission(options) === 'granted') {
-        const writable = await localFileHandle.createWritable();
-        await writable.write(JSON.stringify(S, null, 2));
-        await writable.close();
-        toast(`data.json güncellendi (v${S.version}) 💾`, 'success');
-        await checkFileLinkStatus();
-        return;
-      }
-    } catch(e) {
-      console.error(e);
-      toast('data.json dosyasına yazılamadı: ' + e.message, 'error');
-    }
+    hasUnsavedChanges = true;
+    updateActionButtons();
+    toast(`Taslak tarayıcıya kaydedildi (v${S.version}). Dosyayı güncellemek için yukarıdaki "Dosyaya Kaydet" butonuna basın.`, 'info');
+  } else {
+    toast(`Tarayıcıya kaydedildi (v${S.version}). Kalıcı olması için "data.json Bağla" kullanın veya JSON indirin.`, 'info');
   }
-  toast(`Tarayıcıya kaydedildi (v${S.version}). Kalıcı olması için "data.json Bağla" kullanın veya JSON indirin.`, 'info');
 }
 
 function load() {
@@ -1255,6 +1337,7 @@ window.addEventListener('load', async () => {
     } catch(e) { /* no-op */ }
   }
 
+  updateActionButtons();
   renderAll();
 });
 </script>
