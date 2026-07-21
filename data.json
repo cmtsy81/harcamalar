@@ -3,7 +3,7 @@
   "destination": "İtalya",
   "startDate": "2026-08-28",
   "endDate": "2026-09-12",
-  "lastUpdated": "2026-07-17",
+  "lastUpdated": "2026-07-21",
   "persons": [
     {
       "id": "cem",
@@ -68,7 +68,7 @@
       "totalAmount": 55013.69,
       "paidBy": "cem",
       "date": "2026-07-16",
-      "category": "accommodation",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 9168.97,
@@ -86,7 +86,7 @@
       "totalAmount": 28608.96,
       "paidBy": "cem",
       "date": "2026-07-16",
-      "category": "accommodation",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 4768.16,
@@ -104,7 +104,7 @@
       "totalAmount": 25006.17,
       "paidBy": "cem",
       "date": "2026-07-16",
-      "category": "accommodation",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 4167.7,
@@ -122,7 +122,7 @@
       "totalAmount": 44853.12,
       "paidBy": "cem",
       "date": "2026-07-16",
-      "category": "accommodation",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 7475.52,
@@ -135,12 +135,12 @@
     },
     {
       "id": "id_vq9en9g",
-      "title": "roma-floransa otobüs",
+      "title": "roma-floransa ototbüs",
       "currency": "TRY",
       "totalAmount": 3771.96,
       "paidBy": "cem",
       "date": "2026-07-17",
-      "category": "transport",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 628.66,
@@ -158,7 +158,7 @@
       "totalAmount": 113.4,
       "paidBy": "cem",
       "date": "2026-07-17",
-      "category": "transport",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 18.9,
@@ -176,7 +176,7 @@
       "totalAmount": 125.5,
       "paidBy": "cem",
       "date": "2026-07-17",
-      "category": "transport",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 22.9,
@@ -194,7 +194,7 @@
       "totalAmount": 130,
       "paidBy": "cem",
       "date": "2026-07-17",
-      "category": "activity",
+      "category": "other",
       "notes": "",
       "shares": {
         "cem": 21.68,
@@ -204,7 +204,25 @@
         "fatma": 21.66,
         "defne": 21.66
       }
+    },
+    {
+      "id": "id_22tt6m6",
+      "title": "Pompei Ekspress antik kenti",
+      "currency": "EUR",
+      "totalAmount": 80,
+      "paidBy": "cem",
+      "date": "2026-07-21",
+      "category": "other",
+      "notes": "",
+      "shares": {
+        "cem": 13.34,
+        "zeynep": 13.33,
+        "can": 13.33,
+        "ali": 13.34,
+        "fatma": 13.33,
+        "defne": 13.33
+      }
     }
   ],
-  "version": 56
+  "version": 49
 }
