@@ -528,6 +528,7 @@
     <div class="container nav-inner">
       <a href="#" class="nav-logo">🌴 Tatil Kasası</a>
       <div style="display:flex;align-items:center;gap:10px">
+        <button class="theme-toggle" onclick="clearCache()" style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer;">🔄 Yenile</button>
         <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()"
           style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500;">🌓 Tema</button>
         <a href="admin.html" class="admin-link">⚙️ Yönetim Paneli</a>
@@ -746,6 +747,12 @@
       }
 
       return null;
+    }
+
+    function clearCache() {
+      localStorage.removeItem('tatil_view_cache');
+      localStorage.removeItem('tatil_harcama_data');
+      window.location.reload(true);
     }
 
     /* ================================================================

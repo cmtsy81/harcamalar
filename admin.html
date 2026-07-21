@@ -226,7 +226,7 @@
         <div class="divider"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-danger btn-sm" onclick="resetAll()">🗑️ Tüm Verileri Sil</button>
-          <button class="btn btn-secondary btn-sm" onclick="loadDefaultData()">📋 Örnek Veri Yükle</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadDefaultData()">🔄 Sunucudan Yenile</button>
         </div>
       </div>
     </div>
@@ -1241,7 +1241,7 @@ async function loadDefaultData() {
     if (!r.ok) throw new Error();
     S = await r.json();
     save(); renderAll();
-    toast('Örnek veriler yüklendi','success');
+    toast('Sunucudan güncel veriler yüklendi','success');
   } catch(e) {
     toast('data.json bulunamadı — sayfayı bir web sunucusuyla açın','error');
   }
