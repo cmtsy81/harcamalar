@@ -185,7 +185,10 @@
     <div class="tab-content active" id="panel-exp">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
         <h2 id="exp-count-title">Harcamalar</h2>
-        <button class="btn btn-primary" onclick="openExpModal(null)">+ Yeni Harcama</button>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-green" onclick="openPaymentModal()" style="font-weight:600">💸 Ödeme Ekle</button>
+          <button class="btn btn-primary" onclick="openExpModal(null)">+ Yeni Harcama</button>
+        </div>
       </div>
       <div id="exp-list" style="display:flex;flex-direction:column;gap:10px">
         <div class="empty"><div class="empty-icon">💸</div><p>Henüz harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>
@@ -285,6 +288,7 @@
             <option value="activity">🎭 Aktivite</option>
             <option value="shopping">🛍️ Alışveriş</option>
             <option value="health">💊 Sağlık</option>
+            <option value="payment">💸 Ödeme</option>
             <option value="other">📦 Diğer</option>
           </select>
         </div>
@@ -404,6 +408,51 @@
 </div>
 
 <!-- ===================================================
+     PAYMENT MODAL
+===================================================== -->
+<div id="payment-modal" class="modal-overlay hidden" onclick="modalOverlayClick(event,'payment-modal')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>💸 Ödeme Ekle</h3>
+      <button class="btn btn-secondary btn-icon" onclick="closePaymentModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid-2" style="margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Ödeyen (Borçlu) *</label>
+          <select id="pay-from" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Alan (Alacaklı) *</label>
+          <select id="pay-to" class="form-control"></select>
+        </div>
+      </div>
+      <div class="form-grid-3" style="margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Tutar *</label>
+          <input id="pay-amount" type="number" class="form-control" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Para Birimi</label>
+          <select id="pay-currency" class="form-control">
+            <option value="TRY">₺ Türk Lirası</option>
+            <option value="EUR">€ Euro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tarih</label>
+          <input id="pay-date" type="date" class="form-control">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePaymentModal()">İptal</button>
+      <button class="btn btn-primary" onclick="savePayment()">💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================
      CONFIRM MODAL
 ===================================================== -->
 <div id="confirm-modal" class="modal-overlay hidden" onclick="modalOverlayClick(event,'confirm-modal')">
@@ -435,6 +484,7 @@ const CAT = {
   activity:      { icon:'🎭', label:'Aktivite',  bg:'rgba(129,140,248,.15)' },
   shopping:      { icon:'🛍️', label:'Alışveriş', bg:'rgba(251,191,36,.12)'  },
   health:        { icon:'💊', label:'Sağlık',    bg:'rgba(244,63,94,.12)'   },
+  payment:       { icon:'💸', label:'Ödeme',     bg:'rgba(34,197,94,.15)'   },
   other:         { icon:'📦', label:'Diğer',     bg:'rgba(100,116,139,.12)' }
 };
 const FAM = {
@@ -1207,6 +1257,59 @@ function savePerson() {
   renderPersons();
   closePersonModal();
   toast(editPersonId ? 'Kişi güncellendi' : 'Kişi eklendi', 'success');
+}
+
+/* ================================================================
+   PAYMENTS
+================================================================ */
+function openPaymentModal() {
+  const fromSel = document.getElementById('pay-from');
+  const toSel = document.getElementById('pay-to');
+  const opts = S.persons.map(p => `<option value="${p.id}">${p.name} (${famOf(p.family).label})</option>`).join('');
+  fromSel.innerHTML = opts;
+  toSel.innerHTML = opts;
+  document.getElementById('pay-amount').value = '';
+  document.getElementById('pay-currency').value = 'TRY';
+  document.getElementById('pay-date').value = new Date().toISOString().slice(0,10);
+  
+  document.getElementById('payment-modal').classList.remove('hidden');
+}
+
+function closePaymentModal() {
+  document.getElementById('payment-modal').classList.add('hidden');
+}
+
+function savePayment() {
+  const fromId = document.getElementById('pay-from').value;
+  const toId = document.getElementById('pay-to').value;
+  const amount = +document.getElementById('pay-amount').value;
+  const cur = document.getElementById('pay-currency').value;
+  
+  if (fromId === toId) { toast('Ödeyen ve alan farklı olmalıdır', 'error'); return; }
+  if (!amount) { toast('Tutar girin', 'error'); return; }
+  
+  const fromName = S.persons.find(p => p.id === fromId)?.name;
+  const toName = S.persons.find(p => p.id === toId)?.name;
+  
+  const shares = {};
+  shares[toId] = amount;
+  
+  S.expenses.push({
+    id: uid(),
+    title: `Ödeme: ${fromName} -> ${toName}`,
+    currency: cur,
+    totalAmount: amount,
+    paidBy: fromId,
+    date: document.getElementById('pay-date').value,
+    category: 'payment',
+    notes: '',
+    shares: shares
+  });
+  
+  save();
+  renderExpenses();
+  closePaymentModal();
+  toast('Ödeme eklendi', 'success');
 }
 
 /* ================================================================
