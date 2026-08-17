@@ -528,7 +528,7 @@
     <div class="container nav-inner">
       <a href="#" class="nav-logo">🌴 Tatil Kasası</a>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="theme-toggle" onclick="clearCache()" style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer;">🔄 Yenile</button>
+        <button class="theme-toggle" onclick="refreshData()" style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500;">🔄 Yenile</button>
         <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()"
           style="padding: 6px 12px; font-size: 0.8125rem; font-weight: 500;">🌓 Tema</button>
         <a href="admin.html" class="admin-link">⚙️ Yönetim Paneli</a>
@@ -705,11 +705,18 @@
       let viewCache = null;
       let adminCache = null;
 
-      // 1) Try fetching from disk/server
+      // 1) Try fetching from backend API or data.json
       try {
-        const r = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
-        if (r.ok) fetched = await r.json();
-      } catch (e) { console.warn('fetch failed:', e.message); }
+        const apiRes = await fetch('/api/data', { cache: 'no-store' });
+        if (apiRes.ok) fetched = await apiRes.json();
+      } catch (e) { /* no-op */ }
+
+      if (!fetched) {
+        try {
+          const r = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
+          if (r.ok) fetched = await r.json();
+        } catch (e) { console.warn('fetch failed:', e.message); }
+      }
 
       // 2) Try loading view cache
       try {
@@ -737,12 +744,11 @@
       }
 
       if (best) {
-        // Sync the caches so they stay up-to-date
+        // Sync view cache
         localStorage.setItem('tatil_view_cache', JSON.stringify(best));
 
-        // Alert the user if we had to fall back to a local copy
-        if (best !== fetched) {
-          toast(`⚠️ En güncel veriler yerel hafızadan yüklendi (${source}).`, 'info');
+        if (best !== fetched && source !== "sunucu/dosya") {
+          toast(`En güncel veriler yerel hafızadan yüklendi (${source}).`, 'info');
         }
         return best;
       }
@@ -750,10 +756,23 @@
       return null;
     }
 
-    function clearCache() {
-      localStorage.removeItem('tatil_view_cache');
-      localStorage.removeItem('tatil_harcama_data');
-      window.location.reload(true);
+    async function refreshData() {
+      toast('Veriler güncelleniyor...', 'info', 1500);
+      try {
+        const data = await loadData();
+        if (data) {
+          _data = data;
+          document.getElementById('st-loading').classList.add('hidden');
+          document.getElementById('st-error').classList.add('hidden');
+          document.getElementById('st-content').classList.remove('hidden');
+          renderAll();
+          toast('Veriler güncellendi 🔄', 'success');
+        } else {
+          toast('Güncel veri bulunamadı', 'error');
+        }
+      } catch(e) {
+        toast('Yenileme hatası: ' + e.message, 'error');
+      }
     }
 
     /* ================================================================
