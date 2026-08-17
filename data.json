@@ -298,7 +298,41 @@
         "cem": 10000
       },
       "period": "payment"
+    },
+    {
+      "id": "id_kok62h4",
+      "title": "comosetto del angelo forma gelato",
+      "currency": "EUR",
+      "totalAmount": 25,
+      "paidBy": "ali",
+      "date": "2026-08-17",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "items": [
+        {
+          "id": "id_dod43bt",
+          "name": "dondurma",
+          "amount": 25,
+          "consumers": [
+            "cem",
+            "zeynep",
+            "can",
+            "ali",
+            "fatma",
+            "defne"
+          ]
+        }
+      ],
+      "shares": {
+        "cem": 4.17,
+        "zeynep": 4.17,
+        "can": 4.17,
+        "ali": 4.17,
+        "fatma": 4.17,
+        "defne": 4.17
+      }
     }
   ],
-  "version": 57
+  "version": 59
 }
