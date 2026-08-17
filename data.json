@@ -332,7 +332,41 @@
         "fatma": 4.17,
         "defne": 4.17
       }
+    },
+    {
+      "id": "id_d8ftwb1",
+      "title": "Ldldl",
+      "currency": "EUR",
+      "totalAmount": 20,
+      "paidBy": "cem",
+      "date": "2026-08-17",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "items": [
+        {
+          "id": "id_6ssglex",
+          "name": "Mdkdkd",
+          "amount": 20,
+          "consumers": [
+            "cem",
+            "zeynep",
+            "can",
+            "ali",
+            "fatma",
+            "defne"
+          ]
+        }
+      ],
+      "shares": {
+        "cem": 3.33,
+        "zeynep": 3.33,
+        "can": 3.33,
+        "ali": 3.33,
+        "fatma": 3.33,
+        "defne": 3.33
+      }
     }
   ],
-  "version": 59
+  "version": 60
 }
