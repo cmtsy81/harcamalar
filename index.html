@@ -767,12 +767,8 @@
       toast('Veriler güncelleniyor...', 'info', 1500);
       try {
         const data = await loadData();
-        if (data) {
-          _data = data;
-          document.getElementById('st-loading').classList.add('hidden');
-          document.getElementById('st-error').classList.add('hidden');
-          document.getElementById('st-content').classList.remove('hidden');
-          renderAll();
+        if (data && data.persons && data.expenses) {
+          render(data);
           toast('Veriler güncellendi 🔄', 'success');
         } else {
           toast('Güncel veri bulunamadı', 'error');

@@ -257,7 +257,7 @@
     {
       "id": "id_h8y8r44",
       "title": "kolezyum-palatine-forum",
-      "currency": "TRY",
+      "currency": "EUR",
       "totalAmount": 72,
       "paidBy": "cem",
       "date": "2026-08-17",
@@ -286,5 +286,5 @@
       }
     }
   ],
-  "version": 56
+  "version": 57
 }
