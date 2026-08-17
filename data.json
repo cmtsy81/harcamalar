@@ -59,7 +59,8 @@
         "ali": 18000,
         "fatma": 18000,
         "defne": 18000
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_7lijuhh",
@@ -77,7 +78,8 @@
         "ali": 9168.97,
         "fatma": 9168.94,
         "defne": 9168.94
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_ntav6wj",
@@ -95,7 +97,8 @@
         "ali": 4768.16,
         "fatma": 4768.16,
         "defne": 4768.16
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_5prvz2w",
@@ -113,7 +116,8 @@
         "ali": 4167.7,
         "fatma": 4167.69,
         "defne": 4167.69
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_8rsfrao",
@@ -131,7 +135,8 @@
         "ali": 7475.52,
         "fatma": 7475.52,
         "defne": 7475.52
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_vq9en9g",
@@ -149,7 +154,8 @@
         "ali": 628.66,
         "fatma": 628.66,
         "defne": 628.66
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_661qqkc",
@@ -167,7 +173,8 @@
         "ali": 18.9,
         "fatma": 18.9,
         "defne": 18.9
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_4k1v2rf",
@@ -185,7 +192,8 @@
         "ali": 18.94,
         "fatma": 18.93,
         "defne": 18.93
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_w10yhzb",
@@ -203,7 +211,8 @@
         "ali": 21.68,
         "fatma": 21.66,
         "defne": 21.66
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_22tt6m6",
@@ -221,7 +230,8 @@
         "ali": 13.34,
         "fatma": 13.33,
         "defne": 13.33
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_sjwsx3l",
@@ -234,7 +244,8 @@
       "notes": "",
       "shares": {
         "cem": 80000
-      }
+      },
+      "period": "payment"
     },
     {
       "id": "id_yxuzc84",
@@ -252,7 +263,8 @@
         "ali": 31.8,
         "fatma": 31.8,
         "defne": 31.8
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_h8y8r44",
@@ -270,7 +282,8 @@
         "ali": 12,
         "fatma": 12,
         "defne": 12
-      }
+      },
+      "period": "pre_trip"
     },
     {
       "id": "id_2tet43v",
@@ -283,7 +296,8 @@
       "notes": "",
       "shares": {
         "cem": 10000
-      }
+      },
+      "period": "payment"
     }
   ],
   "version": 57

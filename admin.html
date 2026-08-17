@@ -175,23 +175,47 @@
   <div class="container">
 
     <!-- TABS -->
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-exp"  onclick="switchTab('exp')">💰 Harcamalar</button>
+    <div class="tabs" style="margin-bottom:20px;display:flex;gap:6px;overflow-x:auto">
+      <button class="tab-btn active" id="tab-pre"  onclick="switchTab('pre')">✈️ Tatil Öncesi</button>
+      <button class="tab-btn"        id="tab-on"   onclick="switchTab('on')">🍽️ Tatil Zamanı / Adisyon</button>
+      <button class="tab-btn"        id="tab-pay"  onclick="switchTab('pay')">💸 Ara Ödemeler</button>
       <button class="tab-btn"        id="tab-pers" onclick="switchTab('pers')">👥 Kişiler</button>
       <button class="tab-btn"        id="tab-set"  onclick="switchTab('set')">⚙️ Ayarlar</button>
     </div>
 
-    <!-- ===== EXPENSES TAB ===== -->
-    <div class="tab-content active" id="panel-exp">
+    <!-- ===== PRE-TRIP EXPENSES TAB ===== -->
+    <div class="tab-content active" id="panel-pre">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-        <h2 id="exp-count-title">Harcamalar</h2>
+        <h2 id="pre-count-title">✈️ Tatil Öncesi Harcamalar</h2>
+        <button class="btn btn-primary" onclick="openExpModal(null, 'pre_trip')">+ Yeni Tatil Öncesi Harcama</button>
+      </div>
+      <div id="pre-list" style="display:flex;flex-direction:column;gap:10px">
+        <div class="empty"><div class="empty-icon">✈️</div><p>Henüz tatil öncesi harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>
+      </div>
+    </div>
+
+    <!-- ===== ON-TRIP (RECEIPTS/RESTAURANTS) TAB ===== -->
+    <div class="tab-content" id="panel-on">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <h2 id="on-count-title">🍽️ Tatil Zamanı / Adisyon & Restoran</h2>
         <div style="display:flex;gap:10px">
-          <button class="btn btn-green" onclick="openPaymentModal()" style="font-weight:600">💸 Ödeme Ekle</button>
-          <button class="btn btn-primary" onclick="openExpModal(null)">+ Yeni Harcama</button>
+          <button class="btn btn-primary" onclick="openReceiptModal(null)">🧾 + Yeni Adisyon / Fiş Ekle</button>
+          <button class="btn btn-secondary" onclick="openExpModal(null, 'on_trip')">+ Hızlı Harcama</button>
         </div>
       </div>
-      <div id="exp-list" style="display:flex;flex-direction:column;gap:10px">
-        <div class="empty"><div class="empty-icon">💸</div><p>Henüz harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>
+      <div id="on-list" style="display:flex;flex-direction:column;gap:10px">
+        <div class="empty"><div class="empty-icon">🍽️</div><p>Henüz restoran veya adisyon fişi yok.<br>Yukarıdaki butona tıklayın.</p></div>
+      </div>
+    </div>
+
+    <!-- ===== PAYMENTS TAB ===== -->
+    <div class="tab-content" id="panel-pay">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <h2 id="pay-count-title">💸 Ara Ödemeler & Borç Transferleri</h2>
+        <button class="btn btn-green" onclick="openPaymentModal()" style="font-weight:600">💸 + Yeni Ödeme Ekle</button>
+      </div>
+      <div id="pay-list" style="display:flex;flex-direction:column;gap:10px">
+        <div class="empty"><div class="empty-icon">💸</div><p>Henüz ara ödeme kaydı yok.<br>Yukarıdaki butona tıklayın.</p></div>
       </div>
     </div>
 
@@ -273,8 +297,8 @@
         </div>
       </div>
 
-      <!-- Row 3: Payer | Category -->
-      <div class="form-grid-2" style="margin-bottom:14px">
+      <!-- Row 3: Payer | Category | Period -->
+      <div class="form-grid-3" style="margin-bottom:14px">
         <div class="form-group">
           <label class="form-label">Ödeyen *</label>
           <select id="e-payer" class="form-control"></select>
@@ -290,6 +314,13 @@
             <option value="health">💊 Sağlık</option>
             <option value="payment">💸 Ödeme</option>
             <option value="other">📦 Diğer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Harcama Dönemi</label>
+          <select id="e-period" class="form-control">
+            <option value="pre_trip">✈️ Tatil Öncesi (Sabit)</option>
+            <option value="on_trip">🍽️ Tatil Zamanı (Adisyon/Günlük)</option>
           </select>
         </div>
       </div>
@@ -364,6 +395,95 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeExpModal()">İptal</button>
       <button class="btn btn-primary"   onclick="saveExpense()" id="save-exp-btn">💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================
+     RECEIPT / ADISYON MODAL
+===================================================== -->
+<div id="receipt-modal" class="modal-overlay hidden" onclick="modalOverlayClick(event,'receipt-modal')">
+  <div class="modal-box" style="max-width:760px" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="receipt-modal-title">🧾 Yeni Adisyon / Restoran Fişi</h3>
+      <button class="btn btn-secondary btn-icon" onclick="closeReceiptModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- General Info -->
+      <div class="form-grid-2" style="margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Restoran / Mekan Adı *</label>
+          <input id="rec-title" type="text" class="form-control" placeholder="Örn: Trattoria Da Enzo Roma">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ödeyen Kişi *</label>
+          <select id="rec-payer" class="form-control"></select>
+        </div>
+      </div>
+      <div class="form-grid-2" style="margin-bottom:18px">
+        <div class="form-group">
+          <label class="form-label">Para Birimi</label>
+          <select id="rec-currency" class="form-control" onchange="renderReceiptItems()">
+            <option value="EUR">€ Euro</option>
+            <option value="TRY">₺ Türk Lirası</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tarih</label>
+          <input id="rec-date" type="date" class="form-control">
+        </div>
+      </div>
+
+      <!-- Add Item Subform -->
+      <div style="background:var(--bg-3);border:1px solid var(--border);border-radius:var(--r-xl);padding:16px;margin-bottom:16px">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-1);margin-bottom:10px">➕ Adisyona Kalem / Yemek Ekle</div>
+        <div class="form-grid-2" style="gap:10px;margin-bottom:10px">
+          <div class="form-group">
+            <label class="form-label">Yemek / İçecek / Kalem Adı</label>
+            <input id="rec-item-name" type="text" class="form-control form-control-sm" placeholder="Örn: 2x Pizza Margherita">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kalem Tutarı</label>
+            <input id="rec-item-amt" type="number" class="form-control form-control-sm" placeholder="0.00" min="0" step="0.01">
+          </div>
+        </div>
+        
+        <!-- Consumer Selector -->
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label class="form-label" style="margin:0">Kimler Yedi / Tüketti?</label>
+            <button type="button" class="btn btn-secondary btn-xs" onclick="toggleAllReceiptConsumers()">👥 Herkesi Seç / Kaldır</button>
+          </div>
+          <div id="rec-consumers-wrap" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-sm" style="width:100%" onclick="addReceiptItem()">+ Bu Kalemi Adisyona Ekle</button>
+      </div>
+
+      <!-- Receipt Items Table -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--text-2);margin-bottom:8px">Eklenen Kalemler</div>
+        <div id="rec-items-list" style="display:flex;flex-direction:column;gap:6px">
+          <div style="text-align:center;padding:16px;color:var(--text-3);font-size:0.85rem;border:1px dashed var(--border);border-radius:var(--r-md)">
+            Henüz kalem eklenmedi. Yukarıdan kalemleri ekleyin.
+          </div>
+        </div>
+      </div>
+
+      <!-- Calculated Shares Breakdown Preview -->
+      <div style="background:var(--glass);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:700;font-size:0.95rem">Toplam Fiş Tutarı:</span>
+          <strong id="rec-total-disp" style="font-size:1.25rem;color:var(--eur)">0.00 €</strong>
+        </div>
+        <div style="font-size:0.75rem;font-weight:600;color:var(--text-3);text-transform:uppercase;margin-bottom:6px">Hesaplanan Kişi Payları:</div>
+        <div id="rec-shares-preview" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:6px"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeReceiptModal()">İptal</button>
+      <button class="btn btn-primary" onclick="saveReceiptModal()">💾 Adisyonu Kaydet</button>
     </div>
   </div>
 </div>
@@ -817,9 +937,11 @@ function updateThemeButton() {
    TABS
 ================================================================ */
 function switchTab(tab) {
-  ['exp','pers','set'].forEach(t => {
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
-    document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+  ['pre', 'on', 'pay', 'pers', 'set'].forEach(t => {
+    const tabEl = document.getElementById('tab-' + t);
+    const panelEl = document.getElementById('panel-' + t);
+    if (tabEl) tabEl.classList.toggle('active', t === tab);
+    if (panelEl) panelEl.classList.toggle('active', t === tab);
   });
 }
 
@@ -833,71 +955,297 @@ function renderAll() {
 }
 
 /* ================================================================
-   EXPENSES & PAYMENTS
+   EXPENSES & PAYMENTS (Pre-trip, On-trip Adisyon, Payments)
 ================================================================ */
 let editPaymentId = null;
 
 function renderExpenses() {
-  const el = document.getElementById('exp-list');
-  const realCount = S.expenses.filter(e => e.category !== 'payment').length;
-  const payCount = S.expenses.filter(e => e.category === 'payment').length;
-  document.getElementById('exp-count-title').textContent = `Harcamalar (${realCount}${payCount > 0 ? ' + ' + payCount + ' ödeme' : ''})`;
+  const preList = S.expenses.filter(e => e.category !== 'payment' && (e.period || 'pre_trip') === 'pre_trip');
+  const onList  = S.expenses.filter(e => e.category !== 'payment' && (e.period === 'on_trip' || e.category === 'food'));
+  const payList = S.expenses.filter(e => e.category === 'payment');
 
-  if (!S.expenses.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">💸</div><p>Henüz harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>`;
-    return;
+  const preTitle = document.getElementById('pre-count-title');
+  const onTitle  = document.getElementById('on-count-title');
+  const payTitle = document.getElementById('pay-count-title');
+
+  if (preTitle) preTitle.textContent = `✈️ Tatil Öncesi Harcamalar (${preList.length})`;
+  if (onTitle)  onTitle.textContent  = `🍽️ Tatil Zamanı / Adisyon & Restoran (${onList.length})`;
+  if (payTitle) payTitle.textContent = `💸 Ara Ödemeler & Borç Transferleri (${payList.length})`;
+
+  // 1. Render Pre-trip List
+  const preEl = document.getElementById('pre-list');
+  if (preEl) {
+    if (!preList.length) {
+      preEl.innerHTML = `<div class="empty"><div class="empty-icon">✈️</div><p>Henüz tatil öncesi harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>`;
+    } else {
+      const sorted = [...preList].sort((a,b) => new Date(b.date)-new Date(a.date));
+      preEl.innerHTML = sorted.map(exp => renderExpItemHTML(exp, 'pre')).join('');
+    }
   }
 
-  const sorted = [...S.expenses].sort((a,b) => new Date(b.date)-new Date(a.date));
+  // 2. Render On-trip / Receipt List
+  const onEl = document.getElementById('on-list');
+  if (onEl) {
+    if (!onList.length) {
+      onEl.innerHTML = `<div class="empty"><div class="empty-icon">🍽️</div><p>Henüz restoran veya adisyon fişi yok.<br>Yukarıdaki butona tıklayın.</p></div>`;
+    } else {
+      const sorted = [...onList].sort((a,b) => new Date(b.date)-new Date(a.date));
+      onEl.innerHTML = sorted.map(exp => renderExpItemHTML(exp, 'on')).join('');
+    }
+  }
 
-  el.innerHTML = sorted.map(exp => {
-    const isPayment = exp.category === 'payment';
-    const cat   = CAT[exp.category] || CAT.other;
-    const payer = S.persons.find(p=>p.id===exp.paidBy);
-    const payFam= famOf(payer?.family);
-    const isTRY = exp.currency==='TRY';
-
-    if (isPayment) {
-      const receiverId = Object.keys(exp.shares || {})[0];
-      const receiver = S.persons.find(p=>p.id===receiverId);
-      return `<div class="exp-item animate-in" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25)">
-        <div class="exp-icon-sm" style="background:rgba(16,185,129,0.18)">💸</div>
-        <div class="exp-info">
-          <div class="exp-title2" style="color:#10B981;font-weight:700">${exp.title}</div>
-          <div class="exp-meta2">
-            <span class="badge" style="background:rgba(16,185,129,0.2);color:#10B981;font-size:.68rem">Ara Ödeme</span>
-            ${exp.date ? new Date(exp.date).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : ''}
-            <span style="font-size:0.75rem;color:var(--text-2)">${payer?.name || '?'} ➔ ${receiver?.name || '?'}</span>
+  // 3. Render Payments List
+  const payEl = document.getElementById('pay-list');
+  if (payEl) {
+    if (!payList.length) {
+      payEl.innerHTML = `<div class="empty"><div class="empty-icon">💸</div><p>Henüz ara ödeme kaydı yok.<br>Yukarıdaki butona tıklayın.</p></div>`;
+    } else {
+      const sorted = [...payList].sort((a,b) => new Date(b.date)-new Date(a.date));
+      payEl.innerHTML = sorted.map(exp => {
+        const receiverId = Object.keys(exp.shares || {})[0];
+        const receiver = S.persons.find(p => p.id === receiverId);
+        const payer = S.persons.find(p => p.id === exp.paidBy);
+        return `<div class="exp-item animate-in" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25)">
+          <div class="exp-icon-sm" style="background:rgba(16,185,129,0.18)">💸</div>
+          <div class="exp-info">
+            <div class="exp-title2" style="color:#10B981;font-weight:700">${exp.title}</div>
+            <div class="exp-meta2">
+              <span class="badge" style="background:rgba(16,185,129,0.2);color:#10B981;font-size:.68rem">Ara Ödeme</span>
+              ${exp.date ? new Date(exp.date).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : ''}
+              <span style="font-size:0.75rem;color:var(--text-2)">${payer?.name || '?'} ➔ ${receiver?.name || '?'}</span>
+            </div>
           </div>
+          <div class="exp-amt" style="color:#10B981">${fmt(exp.totalAmount,exp.currency)}</div>
+          <div class="exp-actions">
+            <button class="btn btn-secondary btn-icon btn-sm" title="Düzenle" onclick="openPaymentModal('${exp.id}')">✏️</button>
+            <button class="btn btn-danger btn-icon btn-sm"    title="Sil"     onclick="confirmDelete('${exp.id}','exp')">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+function renderExpItemHTML(exp, type) {
+  const cat = CAT[exp.category] || (type === 'on' ? CAT.food : CAT.other);
+  const payer = S.persons.find(p => p.id === exp.paidBy);
+  const payFam = famOf(payer?.family);
+  const isTRY = exp.currency === 'TRY';
+  const hasItems = Array.isArray(exp.items) && exp.items.length > 0;
+
+  return `<div class="exp-item animate-in">
+    <div class="exp-icon-sm" style="background:${cat.bg}">${hasItems ? '🧾' : cat.icon}</div>
+    <div class="exp-info">
+      <div class="exp-title2">${exp.title}</div>
+      <div class="exp-meta2">
+        <span class="badge ${isTRY?'badge-try':'badge-eur'}" style="font-size:.68rem">${isTRY?'₺':'€'} ${exp.currency}</span>
+        ${hasItems ? `<span class="badge" style="font-size:.68rem;background:rgba(129,140,248,0.15);color:var(--eur)">${exp.items.length} Kalem Fiş</span>` : ''}
+        ${exp.date ? new Date(exp.date).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : ''}
+        <span style="display:flex;align-items:center;gap:4px">
+          <span class="avatar" style="width:16px;height:16px;font-size:.55rem;background:${payFam.bg};color:${payFam.color}">${initials(payer?.name||'?')}</span>
+          ${payer?.name||'?'} ödedi
+        </span>
+      </div>
+    </div>
+    <div class="exp-amt" style="color:var(--${isTRY?'try':'eur'})">${fmt(exp.totalAmount,exp.currency)}</div>
+    <div class="exp-actions">
+      <button class="btn btn-secondary btn-icon btn-sm" title="Düzenle" onclick="${hasItems ? `openReceiptModal('${exp.id}')` : `openExpModal('${exp.id}')`}">✏️</button>
+      <button class="btn btn-danger btn-icon btn-sm"    title="Sil"     onclick="confirmDelete('${exp.id}','exp')">🗑️</button>
+    </div>
+  </div>`;
+}
+
+/* ================================================================
+   RECEIPT / ADISYON MODAL LOGIC
+================================================================ */
+let editReceiptId = null;
+let currentReceiptItems = [];
+
+function openReceiptModal(id) {
+  editReceiptId = id;
+  const payerSel = document.getElementById('rec-payer');
+  payerSel.innerHTML = S.persons.map(p => `<option value="${p.id}">${p.name} (${famOf(p.family).label})</option>`).join('');
+
+  if (id) {
+    const exp = S.expenses.find(e => e.id === id);
+    if (!exp) return;
+    document.getElementById('receipt-modal-title').textContent = '🧾 Adisyonu Düzenle';
+    document.getElementById('rec-title').value = exp.title || '';
+    document.getElementById('rec-currency').value = exp.currency || 'EUR';
+    document.getElementById('rec-date').value = exp.date || '';
+    payerSel.value = exp.paidBy || '';
+    currentReceiptItems = Array.isArray(exp.items) ? JSON.parse(JSON.stringify(exp.items)) : [];
+  } else {
+    document.getElementById('receipt-modal-title').textContent = '🧾 Yeni Adisyon / Restoran Fişi';
+    document.getElementById('rec-title').value = '';
+    document.getElementById('rec-currency').value = 'EUR';
+    document.getElementById('rec-date').value = new Date().toISOString().slice(0, 10);
+    if (S.persons.length) payerSel.value = S.persons[0].id;
+    currentReceiptItems = [];
+  }
+
+  document.getElementById('rec-item-name').value = '';
+  document.getElementById('rec-item-amt').value = '';
+  renderReceiptConsumers();
+  renderReceiptItems();
+
+  document.getElementById('receipt-modal').classList.remove('hidden');
+  document.getElementById('rec-title').focus();
+}
+
+function closeReceiptModal() {
+  document.getElementById('receipt-modal').classList.add('hidden');
+  editReceiptId = null;
+  currentReceiptItems = [];
+}
+
+function renderReceiptConsumers() {
+  const wrap = document.getElementById('rec-consumers-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = S.persons.map(p => {
+    const fam = famOf(p.family);
+    return `<label style="display:inline-flex;align-items:center;gap:5px;background:var(--glass);border:1px solid var(--border);padding:4px 10px;border-radius:var(--r-full);font-size:0.8rem;cursor:pointer;">
+      <input type="checkbox" class="rec-cons-chk" value="${p.id}" checked style="cursor:pointer">
+      <span class="avatar" style="width:16px;height:16px;font-size:0.55rem;background:${fam.bg};color:${fam.color}">${initials(p.name)}</span>
+      ${p.name}
+    </label>`;
+  }).join('');
+}
+
+function toggleAllReceiptConsumers() {
+  const chks = document.querySelectorAll('.rec-cons-chk');
+  const allChecked = Array.from(chks).every(c => c.checked);
+  chks.forEach(c => c.checked = !allChecked);
+}
+
+function addReceiptItem() {
+  const name = document.getElementById('rec-item-name').value.trim();
+  const amt = +document.getElementById('rec-item-amt').value;
+  const checked = Array.from(document.querySelectorAll('.rec-cons-chk:checked')).map(c => c.value);
+
+  if (!name) { toast('Kalem / yemek adı girin', 'error'); return; }
+  if (!amt || amt <= 0) { toast('Geçerli bir tutar girin', 'error'); return; }
+  if (!checked.length) { toast('En az 1 kişi seçilmelidir', 'error'); return; }
+
+  currentReceiptItems.push({
+    id: uid(),
+    name,
+    amount: amt,
+    consumers: checked
+  });
+
+  document.getElementById('rec-item-name').value = '';
+  document.getElementById('rec-item-amt').value = '';
+  document.getElementById('rec-item-name').focus();
+  renderReceiptItems();
+}
+
+function removeReceiptItem(idx) {
+  currentReceiptItems.splice(idx, 1);
+  renderReceiptItems();
+}
+
+function renderReceiptItems() {
+  const listEl = document.getElementById('rec-items-list');
+  const cur = document.getElementById('rec-currency').value;
+  const sharesPreviewEl = document.getElementById('rec-shares-preview');
+  const totalDispEl = document.getElementById('rec-total-disp');
+
+  let total = 0;
+  const shares = {};
+  S.persons.forEach(p => shares[p.id] = 0);
+
+  currentReceiptItems.forEach(item => {
+    total += item.amount;
+    const perPerson = item.amount / item.consumers.length;
+    item.consumers.forEach(cid => {
+      shares[cid] = (shares[cid] || 0) + perPerson;
+    });
+  });
+
+  if (totalDispEl) totalDispEl.textContent = fmt(total, cur);
+
+  if (!currentReceiptItems.length) {
+    listEl.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text-3);font-size:0.85rem;border:1px dashed var(--border);border-radius:var(--r-md)">
+      Henüz kalem eklenmedi. Yukarıdan kalemleri ekleyin.
+    </div>`;
+  } else {
+    listEl.innerHTML = currentReceiptItems.map((item, idx) => {
+      const consumerNames = item.consumers.map(cid => S.persons.find(p => p.id === cid)?.name || cid).join(', ');
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-md);font-size:0.875rem">
+        <div>
+          <div style="font-weight:600">${item.name}</div>
+          <div style="font-size:0.75rem;color:var(--text-3)">${consumerNames} (${item.consumers.length} kişi)</div>
         </div>
-        <div class="exp-amt" style="color:#10B981">${fmt(exp.totalAmount,exp.currency)}</div>
-        <div class="exp-actions">
-          <button class="btn btn-secondary btn-icon btn-sm" title="Düzenle" onclick="openPaymentModal('${exp.id}')">✏️</button>
-          <button class="btn btn-danger btn-icon btn-sm"    title="Sil"     onclick="confirmDelete('${exp.id}','exp')">🗑️</button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <strong style="color:var(--${cur === 'TRY' ? 'try' : 'eur'})">${fmt(item.amount, cur)}</strong>
+          <button type="button" class="btn btn-danger btn-icon btn-xs" onclick="removeReceiptItem(${idx})" title="Sil">✕</button>
         </div>
       </div>`;
-    }
+    }).join('');
+  }
 
-    return `<div class="exp-item animate-in">
-      <div class="exp-icon-sm" style="background:${cat.bg}">${cat.icon}</div>
-      <div class="exp-info">
-        <div class="exp-title2">${exp.title}</div>
-        <div class="exp-meta2">
-          <span class="badge ${isTRY?'badge-try':'badge-eur'}" style="font-size:.68rem">${isTRY?'₺':'€'} ${exp.currency}</span>
-          ${exp.date ? new Date(exp.date).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : ''}
-          <span style="display:flex;align-items:center;gap:4px">
-            <span class="avatar" style="width:16px;height:16px;font-size:.55rem;background:${payFam.bg};color:${payFam.color}">${initials(payer?.name||'?')}</span>
-            ${payer?.name||'?'} ödedi
-          </span>
-        </div>
-      </div>
-      <div class="exp-amt" style="color:var(--${isTRY?'try':'eur'})">${fmt(exp.totalAmount,exp.currency)}</div>
-      <div class="exp-actions">
-        <button class="btn btn-secondary btn-icon btn-sm" title="Düzenle" onclick="openExpModal('${exp.id}')">✏️</button>
-        <button class="btn btn-danger btn-icon btn-sm"    title="Sil"     onclick="confirmDelete('${exp.id}','exp')">🗑️</button>
-      </div>
-    </div>`;
-  }).join('');
+  if (sharesPreviewEl) {
+    sharesPreviewEl.innerHTML = S.persons.map(p => {
+      const fam = famOf(p.family);
+      const val = shares[p.id] || 0;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:var(--bg-3);border-radius:var(--r-sm);font-size:0.8rem">
+        <span style="display:flex;align-items:center;gap:4px">
+          <span class="avatar" style="width:14px;height:14px;font-size:0.5rem;background:${fam.bg};color:${fam.color}">${initials(p.name)}</span>
+          ${p.name}
+        </span>
+        <strong style="${val === 0 ? 'color:var(--text-3)' : ''}">${fmt(val, cur)}</strong>
+      </div>`;
+    }).join('');
+  }
+}
+
+function saveReceiptModal() {
+  const title = document.getElementById('rec-title').value.trim();
+  const payer = document.getElementById('rec-payer').value;
+  const currency = document.getElementById('rec-currency').value;
+  const date = document.getElementById('rec-date').value;
+
+  if (!title) { toast('Restoran / Adisyon adı girin', 'error'); return; }
+  if (!payer) { toast('Ödeyen kişi seçin', 'error'); return; }
+  if (!currentReceiptItems.length) { toast('Adisyona en az 1 kalem eklemelisiniz', 'error'); return; }
+
+  let total = 0;
+  const shares = {};
+  S.persons.forEach(p => shares[p.id] = 0);
+
+  currentReceiptItems.forEach(item => {
+    total += item.amount;
+    const perPerson = Math.round((item.amount / item.consumers.length) * 100) / 100;
+    item.consumers.forEach(cid => {
+      shares[cid] = (shares[cid] || 0) + perPerson;
+    });
+  });
+
+  const data = {
+    title,
+    currency,
+    totalAmount: Math.round(total * 100) / 100,
+    paidBy: payer,
+    date,
+    category: 'food',
+    period: 'on_trip',
+    notes: '',
+    items: currentReceiptItems,
+    shares
+  };
+
+  if (editReceiptId) {
+    const idx = S.expenses.findIndex(e => e.id === editReceiptId);
+    if (idx !== -1) S.expenses[idx] = { ...S.expenses[idx], ...data };
+  } else {
+    S.expenses.push({ id: uid(), ...data });
+  }
+
+  save();
+  renderExpenses();
+  closeReceiptModal();
+  toast(editReceiptId ? 'Adisyon güncellendi' : 'Adisyon başarıyla kaydedildi 🍽️', 'success');
 }
 
 /* ================================================================
@@ -961,6 +1309,7 @@ function savePayment() {
     paidBy: fromId,
     date,
     category: 'payment',
+    period: 'payment',
     notes: '',
     shares: {
       [toId]: amount
@@ -983,7 +1332,7 @@ function savePayment() {
 /* ================================================================
    EXPENSE MODAL
 ================================================================ */
-function openExpModal(id) {
+function openExpModal(id, defaultPeriod = 'pre_trip') {
   editExpId = id;
   famSplitVisible = false;
   document.getElementById('fam-split-box').classList.add('hidden');
@@ -1001,6 +1350,7 @@ function openExpModal(id) {
     document.getElementById('e-currency').value = exp.currency || 'TRY';
     document.getElementById('e-date').value     = exp.date || '';
     document.getElementById('e-category').value = exp.category || 'other';
+    document.getElementById('e-period').value   = exp.period || 'pre_trip';
     document.getElementById('e-notes').value    = exp.notes || '';
     payer.value = exp.paidBy || '';
   } else {
@@ -1008,7 +1358,8 @@ function openExpModal(id) {
     document.getElementById('e-amount').value   = '';
     document.getElementById('e-currency').value = 'TRY';
     document.getElementById('e-date').value     = new Date().toISOString().slice(0,10);
-    document.getElementById('e-category').value = 'other';
+    document.getElementById('e-category').value = defaultPeriod === 'on_trip' ? 'food' : 'other';
+    document.getElementById('e-period').value   = defaultPeriod || 'pre_trip';
     document.getElementById('e-notes').value    = '';
     if (S.persons.length) payer.value = S.persons[0].id;
   }
@@ -1107,7 +1458,6 @@ function updateValidation() {
 
 function onAmountChange() {
   updateValidation();
-  // Update family split preview if visible
   if (famSplitVisible) previewFamSplit();
 }
 function onCurrencyChange() { updateValidation(); }
@@ -1127,13 +1477,11 @@ function splitEqual() {
   const base = Math.floor((total / n) * 100) / 100;
   const rem  = Math.round((total - base * n) * 100) / 100;
 
-  // Clear everyone
   S.persons.forEach(p => {
     const inp = document.getElementById('sh-'+p.id);
     if (inp) inp.value = 0;
   });
 
-  // Assign to active ones
   activePersons.forEach((p, i) => {
     const inp = document.getElementById('sh-'+p.id);
     if (inp) inp.value = i === 0 ? +(base + rem).toFixed(2) : +base.toFixed(2);
@@ -1155,10 +1503,8 @@ function toggleFamSplit() {
   famSplitVisible = !famSplitVisible;
   document.getElementById('fam-split-box').classList.toggle('hidden', !famSplitVisible);
   if (famSplitVisible) {
-    // Clear diff fields
     const valInp = document.getElementById('fs-diff-val');
     if (valInp) valInp.value = '';
-    // Pre-fill with current total if 50/50
     const total = +document.getElementById('e-amount').value || 0;
     if (total > 0) {
       const half = (total / 2).toFixed(2);
@@ -1172,7 +1518,7 @@ function toggleFamSplit() {
 function calcFamSplitDiff() {
   const total = +document.getElementById('e-amount').value || 0;
   const diffVal = +document.getElementById('fs-diff-val').value || 0;
-  const diffDir = document.getElementById('fs-diff-dir').value; // 'less' or 'more'
+  const diffDir = document.getElementById('fs-diff-dir').value;
 
   if (total <= 0) return;
 
@@ -1202,7 +1548,6 @@ function previewFamSplit() {
   const total = +document.getElementById('e-amount').value || 0;
   const cur   = document.getElementById('e-currency').value;
   
-  // Only count participating family members
   const famA  = S.persons.filter(p => p.family==='A' && document.getElementById('chk-'+p.id)?.checked);
   const famB  = S.persons.filter(p => p.family==='B' && document.getElementById('chk-'+p.id)?.checked);
   
@@ -1229,7 +1574,6 @@ function applyFamSplit() {
   const tA = +document.getElementById('fs-a').value || 0;
   const tB = +document.getElementById('fs-b').value || 0;
 
-  // Only distribute among participating members
   const famA = S.persons.filter(p => p.family==='A' && document.getElementById('chk-'+p.id)?.checked);
   const famB = S.persons.filter(p => p.family==='B' && document.getElementById('chk-'+p.id)?.checked);
 
@@ -1253,7 +1597,6 @@ function applyFamSplit() {
     });
   }
 
-  // Clear everyone first
   S.persons.forEach(p => {
     const inp = document.getElementById('sh-'+p.id);
     if (inp) inp.value = 0;
@@ -1270,6 +1613,7 @@ function saveExpense() {
   const amount = +document.getElementById('e-amount').value;
   const payer  = document.getElementById('e-payer').value;
   const cur    = document.getElementById('e-currency').value;
+  const period = document.getElementById('e-period')?.value || 'pre_trip';
 
   if (!title)  { toast('Başlık zorunlu','error'); return; }
   if (!amount) { toast('Tutar zorunlu','error'); return; }
@@ -1291,6 +1635,7 @@ function saveExpense() {
     paidBy: payer,
     date:     document.getElementById('e-date').value,
     category: document.getElementById('e-category').value,
+    period,
     notes:    document.getElementById('e-notes').value.trim(),
     shares
   };

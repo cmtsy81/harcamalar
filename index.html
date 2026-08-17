@@ -579,6 +579,15 @@
 
     <div class="container">
 
+      <!-- Period Switcher Tabs -->
+      <div class="period-tabs-wrapper" style="display:flex;justify-content:center;margin-bottom:28px;">
+        <div class="tabs" style="max-width:760px;width:100%;padding:6px;gap:6px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-xl);">
+          <button class="tab-btn active" id="p-tab-all" onclick="switchPeriod('all')">📊 Tüm Tatil (Konsolide)</button>
+          <button class="tab-btn" id="p-tab-pre_trip" onclick="switchPeriod('pre_trip')">✈️ Tatil Öncesi (Sabit)</button>
+          <button class="tab-btn" id="p-tab-on_trip" onclick="switchPeriod('on_trip')">🍽️ Tatil Zamanı (Adisyonlar)</button>
+        </div>
+      </div>
+
       <!-- Stats -->
       <div class="stats-grid animate-in" id="stats-grid"></div>
 
@@ -689,6 +698,7 @@
 
     let _data = null;
     let _filter = 'all';
+    let _activePeriod = 'all'; // 'all' | 'pre_trip' | 'on_trip'
 
     /* ================================================================
        DATA LOADING
@@ -723,7 +733,7 @@
         if (a) adminCache = JSON.parse(a);
       } catch (e) { }
 
-      // Compare versions to find the absolute latest data (never prefer an empty cache over real data)
+      // Compare versions to find the absolute latest data
       let best = fetched;
       let source = "sunucu/dosya";
 
@@ -744,9 +754,7 @@
       }
 
       if (best) {
-        // Sync view cache
         localStorage.setItem('tatil_view_cache', JSON.stringify(best));
-
         if (best !== fetched && source !== "sunucu/dosya") {
           toast(`En güncel veriler yerel hafızadan yüklendi (${source}).`, 'info');
         }
@@ -771,36 +779,58 @@
       }
     }
 
+    function switchPeriod(p) {
+      _activePeriod = p;
+      ['all', 'pre_trip', 'on_trip'].forEach(id => {
+        const btn = document.getElementById('p-tab-' + id);
+        if (btn) {
+          if (id === p) btn.classList.add('active');
+          else btn.classList.remove('active');
+        }
+      });
+      if (_data) {
+        render(_data);
+      }
+    }
+
     /* ================================================================
-       CALCULATIONS (Family Settlement & Payments)
+       CALCULATIONS (Family Settlement & Payments with Periods)
     ================================================================ */
-    function calcFamilyBalances(data, cur) {
-      // 1. Gerçek harcamalar ile ara ödemeleri (borç transferlerini) ayır
-      const curExpenses = (data.expenses || []).filter(e => e.currency === cur && e.category !== 'payment');
+    function calcFamilyBalances(data, cur, periodFilter = 'all') {
+      const allCurExpenses = (data.expenses || []).filter(e => e.currency === cur && e.category !== 'payment');
       const curPayments = (data.expenses || []).filter(e => e.currency === cur && e.category === 'payment');
 
-      const totalExpense = curExpenses.reduce((sum, e) => sum + e.totalAmount, 0);
-      const totalPayments = curPayments.reduce((sum, e) => sum + e.totalAmount, 0);
+      // Filter by period if not 'all'
+      const curExpenses = periodFilter === 'all' 
+        ? allCurExpenses 
+        : allCurExpenses.filter(e => (e.period || 'pre_trip') === periodFilter);
 
-      // Aileleri ve aile temsilcilerini tespit et
+      const totalExpense = curExpenses.reduce((sum, e) => sum + e.totalAmount, 0);
+      const totalPayments = (periodFilter === 'on_trip') ? 0 : curPayments.reduce((sum, e) => sum + e.totalAmount, 0);
+
       const famList = [...new Set((data.persons || []).map(p => p.family))];
       const heads = {};
       const famMembers = {};
 
       famList.forEach(f => {
         famMembers[f] = data.persons.filter(p => p.family === f);
-        heads[f] = famMembers[f][0]; // İlk kişi aile temsilcisi
+        heads[f] = famMembers[f][0];
       });
 
-      const famPaid = {}, famShare = {}, famPaymentPaid = {}, famPaymentReceived = {};
+      const famPaid = {}, famShare = {};
+      const famPreShare = {}, famOnShare = {};
+      const famPaymentPaid = {}, famPaymentReceived = {};
+
       famList.forEach(f => {
         famPaid[f] = 0;
         famShare[f] = 0;
+        famPreShare[f] = 0;
+        famOnShare[f] = 0;
         famPaymentPaid[f] = 0;
         famPaymentReceived[f] = 0;
       });
 
-      // Gerçek tatil harcamaları
+      // Filtered expenses calculation
       curExpenses.forEach(exp => {
         const payer = data.persons.find(p => p.id === exp.paidBy);
         if (payer && famPaid[payer.family] !== undefined) {
@@ -814,42 +844,56 @@
         });
       });
 
-      // Aileler arası ara ödemeler / borç transferleri
-      const paymentList = [];
-      curPayments.forEach(pay => {
-        const payer = data.persons.find(p => p.id === pay.paidBy);
-        const receiverId = Object.keys(pay.shares || {})[0];
-        const receiver = data.persons.find(p => p.id === receiverId);
-        const amt = pay.totalAmount || 0;
-
-        if (payer && famPaymentPaid[payer.family] !== undefined) {
-          famPaymentPaid[payer.family] += amt;
-        }
-        if (receiver && famPaymentReceived[receiver.family] !== undefined) {
-          famPaymentReceived[receiver.family] += amt;
-        }
-        if (payer && receiver) {
-          paymentList.push({
-            payer,
-            receiver,
-            amt,
-            title: pay.title,
-            date: pay.date,
-            notes: pay.notes
-          });
-        }
+      // All expenses pre/on shares breakdown for consolidated table
+      allCurExpenses.forEach(exp => {
+        const isPre = (exp.period || 'pre_trip') === 'pre_trip';
+        Object.entries(exp.shares || {}).forEach(([pid, amt]) => {
+          const person = data.persons.find(p => p.id === pid);
+          if (person) {
+            if (isPre) famPreShare[person.family] = (famPreShare[person.family] || 0) + (+amt || 0);
+            else famOnShare[person.family] = (famOnShare[person.family] || 0) + (+amt || 0);
+          }
+        });
       });
 
+      // Payments
+      const paymentList = [];
+      if (periodFilter !== 'on_trip') {
+        curPayments.forEach(pay => {
+          const payer = data.persons.find(p => p.id === pay.paidBy);
+          const receiverId = Object.keys(pay.shares || {})[0];
+          const receiver = data.persons.find(p => p.id === receiverId);
+          const amt = pay.totalAmount || 0;
+
+          if (payer && famPaymentPaid[payer.family] !== undefined) {
+            famPaymentPaid[payer.family] += amt;
+          }
+          if (receiver && famPaymentReceived[receiver.family] !== undefined) {
+            famPaymentReceived[receiver.family] += amt;
+          }
+          if (payer && receiver) {
+            paymentList.push({
+              payer,
+              receiver,
+              amt,
+              title: pay.title,
+              date: pay.date,
+              notes: pay.notes
+            });
+          }
+        });
+      }
+
       // Net bakiyeler
-      const famInitialBalance = {}; // Harcamadan doğan bakiye = Paid - Share
-      const famNetBalance = {};     // Kalan net borç/alacak = Initial + (Ödenen Ara Ödeme - Alınan Ara Ödeme)
+      const famInitialBalance = {};
+      const famNetBalance = {};
       
       famList.forEach(f => {
         famInitialBalance[f] = famPaid[f] - famShare[f];
         famNetBalance[f] = famInitialBalance[f] + (famPaymentPaid[f] - famPaymentReceived[f]);
       });
 
-      // Kalan borç kapatma transferleri
+      // Remaining transfers
       const cred = [], debt = [];
       famList.forEach(f => {
         const head = heads[f];
@@ -888,6 +932,8 @@
         famMembers,
         famPaid,
         famShare,
+        famPreShare,
+        famOnShare,
         famPaymentPaid,
         famPaymentReceived,
         famInitialBalance,
@@ -936,19 +982,26 @@
     }
 
     function renderStats(d) {
-      const realTRY = d.expenses.filter(e => e.currency === 'TRY' && e.category !== 'payment').reduce((s, e) => s + e.totalAmount, 0);
-      const realEUR = d.expenses.filter(e => e.currency === 'EUR' && e.category !== 'payment').reduce((s, e) => s + e.totalAmount, 0);
-      const realExpCount = d.expenses.filter(e => e.category !== 'payment').length;
-      const payCount = d.expenses.filter(e => e.category === 'payment').length;
+      let filtered = d.expenses.filter(e => e.category !== 'payment');
+      if (_activePeriod !== 'all') {
+        filtered = filtered.filter(e => (e.period || 'pre_trip') === _activePeriod);
+      }
+
+      const realTRY = filtered.filter(e => e.currency === 'TRY').reduce((s, e) => s + e.totalAmount, 0);
+      const realEUR = filtered.filter(e => e.currency === 'EUR').reduce((s, e) => s + e.totalAmount, 0);
+      const realExpCount = filtered.length;
+      const payCount = _activePeriod === 'all' ? d.expenses.filter(e => e.category === 'payment').length : 0;
+
+      const periodTitleSuffix = _activePeriod === 'pre_trip' ? ' (Tatil Öncesi)' : _activePeriod === 'on_trip' ? ' (Adisyon & Restoran)' : ' (Toplam Tatil)';
 
       document.getElementById('stats-grid').innerHTML = `
         <div class="stat-card">
           <div class="stat-value" style="color:var(--try)">${fmtTRY(realTRY)}</div>
-          <div class="stat-label">Toplam ₺ Tatil Harcaması</div>
+          <div class="stat-label">₺ Harcama${periodTitleSuffix}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" style="color:var(--eur)">${fmtEUR(realEUR)}</div>
-          <div class="stat-label">Toplam € Tatil Harcaması</div>
+          <div class="stat-label">€ Harcama${periodTitleSuffix}</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">${realExpCount} <span style="font-size:0.9rem;font-weight:400;color:var(--text-3)">${payCount > 0 ? '(+' + payCount + ' ödeme)' : ''}</span></div>
@@ -961,12 +1014,16 @@
     }
 
     function renderCurrency(d, cur) {
-      const has = d.expenses.some(e => e.currency === cur);
+      const calc = calcFamilyBalances(d, cur, _activePeriod);
       const secId = cur === 'TRY' ? 'try-section' : 'eur-section';
-      if (!has) { document.getElementById(secId).classList.add('hidden'); return; }
+      
+      const hasAnyInCur = d.expenses.some(e => e.currency === cur && (_activePeriod === 'all' || (e.period || 'pre_trip') === _activePeriod));
+      if (!hasAnyInCur) { 
+        document.getElementById(secId).classList.add('hidden'); 
+        return; 
+      }
       document.getElementById(secId).classList.remove('hidden');
 
-      const calc = calcFamilyBalances(d, cur);
       const isTRY = cur === 'TRY';
 
       // 1. Summary Cards Row
@@ -986,7 +1043,7 @@
         cardsEl.innerHTML = `
           <div class="stat-card" style="padding:14px">
             <div class="stat-value" style="font-size:1.15rem;color:var(--${isTRY ? 'try' : 'eur'})">${fmt(calc.totalExpense, cur)}</div>
-            <div class="stat-label">Toplam Ortak Harcama</div>
+            <div class="stat-label">${_activePeriod === 'pre_trip' ? 'Tatil Öncesi Toplam' : _activePeriod === 'on_trip' ? 'Adisyon & Restoran Toplam' : 'Toplam Ortak Harcama'}</div>
           </div>
           ${famSharesHTML}
           ${calc.totalPayments > 0 ? `
@@ -998,47 +1055,113 @@
 
       // 2. Family Table
       const tblId = isTRY ? 'try-tbl' : 'eur-tbl';
-      document.querySelector('#' + tblId + ' tbody').innerHTML = calc.famList.map(f => {
-        const fam = famOf(f);
-        const head = calc.heads[f];
-        const membersStr = (calc.famMembers[f] || []).map(m => m.name).join(', ');
-        const paid = calc.famPaid[f] || 0;
-        const share = calc.famShare[f] || 0;
-        const initial = calc.famInitialBalance[f] || 0;
-        const net = calc.famNetBalance[f] || 0;
-        const payPaid = calc.famPaymentPaid[f] || 0;
-        const payRec = calc.famPaymentReceived[f] || 0;
-        const netPayment = payPaid - payRec;
+      const tblEl = document.getElementById(tblId);
 
-        const netCls = net > 0.5 ? 'bal-pos' : net < -0.5 ? 'bal-neg' : 'bal-zer';
-        const netLbl = net > 0.5 ? '▲ Alacaklı' : net < -0.5 ? '▼ Borçlu' : '— Hesap Denk';
+      // Consolidated multi-column table vs standard period table
+      if (_activePeriod === 'all') {
+        tblEl.querySelector('thead').innerHTML = `
+          <tr>
+            <th>Aile / Katılımcılar</th>
+            <th class="text-right">✈️ Öncesi Payı</th>
+            <th class="text-right">🍽️ Adisyon Payı</th>
+            <th class="text-right">Toplam Harcama Payı</th>
+            <th class="text-right">Cebinden Çıkan (Ödenen)</th>
+            <th class="text-right">Ara Ödemeler</th>
+            <th class="text-right">Kalan Net Durum</th>
+          </tr>`;
 
-        return `<tr>
-          <td>
-            <div class="person-cell">
-              <div class="avatar avatar-sm" style="background:${fam.bg};color:${fam.color}">${initials(head?.name || fam.label)}</div>
-              <div>
-                <div style="font-weight:700;font-size:0.95rem">${fam.label} <span style="font-size:0.78rem;font-weight:400;color:var(--text-3)">(${head?.name} Temsilci)</span></div>
-                <div style="font-size:.72rem;color:var(--text-3)">${membersStr}</div>
+        tblEl.querySelector('tbody').innerHTML = calc.famList.map(f => {
+          const fam = famOf(f);
+          const head = calc.heads[f];
+          const membersStr = (calc.famMembers[f] || []).map(m => m.name).join(', ');
+          const paid = calc.famPaid[f] || 0;
+          const share = calc.famShare[f] || 0;
+          const preShare = calc.famPreShare[f] || 0;
+          const onShare = calc.famOnShare[f] || 0;
+          const net = calc.famNetBalance[f] || 0;
+          const payPaid = calc.famPaymentPaid[f] || 0;
+          const payRec = calc.famPaymentReceived[f] || 0;
+          const netPayment = payPaid - payRec;
+
+          const netCls = net > 0.5 ? 'bal-pos' : net < -0.5 ? 'bal-neg' : 'bal-zer';
+          const netLbl = net > 0.5 ? '▲ Alacaklı' : net < -0.5 ? '▼ Borçlu' : '— Hesap Denk';
+
+          return `<tr>
+            <td>
+              <div class="person-cell">
+                <div class="avatar avatar-sm" style="background:${fam.bg};color:${fam.color}">${initials(head?.name || fam.label)}</div>
+                <div>
+                  <div style="font-weight:700;font-size:0.95rem">${fam.label} <span style="font-size:0.78rem;font-weight:400;color:var(--text-3)">(${head?.name} Temsilci)</span></div>
+                  <div style="font-size:.72rem;color:var(--text-3)">${membersStr}</div>
+                </div>
               </div>
-            </div>
-          </td>
-          <td class="text-right" style="font-weight:600">${fmt(paid, cur)}</td>
-          <td class="text-right" style="font-weight:600">${fmt(share, cur)}</td>
-          <td class="text-right" style="font-weight:600;color:${initial > 0.5 ? 'var(--green)' : initial < -0.5 ? 'var(--red)' : 'var(--text-3)'}">
-            ${initial > 0.5 ? '+' : ''}${fmt(initial, cur)}
-          </td>
-          <td class="text-right" style="font-size:0.85rem">
-            ${netPayment > 0.5 ? `<span style="color:#10B981">+${fmt(netPayment, cur)} (Ödedi)</span>` : netPayment < -0.5 ? `<span style="color:#818CF8">${fmt(netPayment, cur)} (Aldı)</span>` : '<span style="color:var(--text-3)">—</span>'}
-          </td>
-          <td class="text-right ${netCls}" style="font-size:1rem;font-weight:700">
-            <div>${net > 0.5 ? '+' : ''}${fmt(net, cur)}</div>
-            <div style="font-size:.7rem;font-weight:500;opacity:.9">${netLbl}</div>
-          </td>
-        </tr>`;
-      }).join('');
+            </td>
+            <td class="text-right" style="font-size:0.875rem">${fmt(preShare, cur)}</td>
+            <td class="text-right" style="font-size:0.875rem">${fmt(onShare, cur)}</td>
+            <td class="text-right" style="font-weight:700">${fmt(share, cur)}</td>
+            <td class="text-right" style="font-weight:600;color:var(--text-1)">${fmt(paid, cur)}</td>
+            <td class="text-right" style="font-size:0.85rem">
+              ${netPayment > 0.5 ? `<span style="color:#10B981">+${fmt(netPayment, cur)} (Ödedi)</span>` : netPayment < -0.5 ? `<span style="color:#818CF8">${fmt(netPayment, cur)} (Aldı)</span>` : '<span style="color:var(--text-3)">—</span>'}
+            </td>
+            <td class="text-right ${netCls}" style="font-size:1rem;font-weight:700">
+              <div>${net > 0.5 ? '+' : ''}${fmt(net, cur)}</div>
+              <div style="font-size:.7rem;font-weight:500;opacity:.9">${netLbl}</div>
+            </td>
+          </tr>`;
+        }).join('');
+      } else {
+        tblEl.querySelector('thead').innerHTML = `
+          <tr>
+            <th>Aile / Katılımcılar</th>
+            <th class="text-right">Cebinden Çıkan (Ödenen)</th>
+            <th class="text-right">Ailenin Payı</th>
+            <th class="text-right">Harcama Bakiyesi</th>
+            ${_activePeriod !== 'on_trip' ? '<th class="text-right">Ara Ödeme</th>' : ''}
+            <th class="text-right">Kalan Net Durum</th>
+          </tr>`;
 
-      // 3. Settle Callout (Ödeme Planı & Son Durum)
+        tblEl.querySelector('tbody').innerHTML = calc.famList.map(f => {
+          const fam = famOf(f);
+          const head = calc.heads[f];
+          const membersStr = (calc.famMembers[f] || []).map(m => m.name).join(', ');
+          const paid = calc.famPaid[f] || 0;
+          const share = calc.famShare[f] || 0;
+          const initial = calc.famInitialBalance[f] || 0;
+          const net = calc.famNetBalance[f] || 0;
+          const payPaid = calc.famPaymentPaid[f] || 0;
+          const payRec = calc.famPaymentReceived[f] || 0;
+          const netPayment = payPaid - payRec;
+
+          const netCls = net > 0.5 ? 'bal-pos' : net < -0.5 ? 'bal-neg' : 'bal-zer';
+          const netLbl = net > 0.5 ? '▲ Alacaklı' : net < -0.5 ? '▼ Borçlu' : '— Hesap Denk';
+
+          return `<tr>
+            <td>
+              <div class="person-cell">
+                <div class="avatar avatar-sm" style="background:${fam.bg};color:${fam.color}">${initials(head?.name || fam.label)}</div>
+                <div>
+                  <div style="font-weight:700;font-size:0.95rem">${fam.label} <span style="font-size:0.78rem;font-weight:400;color:var(--text-3)">(${head?.name} Temsilci)</span></div>
+                  <div style="font-size:.72rem;color:var(--text-3)">${membersStr}</div>
+                </div>
+              </div>
+            </td>
+            <td class="text-right" style="font-weight:600">${fmt(paid, cur)}</td>
+            <td class="text-right" style="font-weight:600">${fmt(share, cur)}</td>
+            <td class="text-right" style="font-weight:600;color:${initial > 0.5 ? 'var(--green)' : initial < -0.5 ? 'var(--red)' : 'var(--text-3)'}">
+              ${initial > 0.5 ? '+' : ''}${fmt(initial, cur)}
+            </td>
+            ${_activePeriod !== 'on_trip' ? `<td class="text-right" style="font-size:0.85rem">
+              ${netPayment > 0.5 ? `<span style="color:#10B981">+${fmt(netPayment, cur)} (Ödedi)</span>` : netPayment < -0.5 ? `<span style="color:#818CF8">${fmt(netPayment, cur)} (Aldı)</span>` : '<span style="color:var(--text-3)">—</span>'}
+            </td>` : ''}
+            <td class="text-right ${netCls}" style="font-size:1rem;font-weight:700">
+              <div>${net > 0.5 ? '+' : ''}${fmt(net, cur)}</div>
+              <div style="font-size:.7rem;font-weight:500;opacity:.9">${netLbl}</div>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+
+      // 3. Settle Callout
       const settleId = isTRY ? 'try-settle' : 'eur-settle';
       const el = document.getElementById(settleId);
 
@@ -1078,7 +1201,9 @@
                 <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
                   <div style="font-size:1.8rem">👉</div>
                   <div>
-                    <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;font-weight:600;letter-spacing:0.06em">Hesabı Kapatmak İçin Kalan Net Ödeme:</div>
+                    <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;font-weight:600;letter-spacing:0.06em">
+                      ${_activePeriod === 'pre_trip' ? 'Tatil Öncesi Kalan Ödeme:' : _activePeriod === 'on_trip' ? 'Adisyon & Restoran Kalan Ödeme:' : 'Hesabı Kapatmak İçin Kalan Net Ödeme:'}
+                    </div>
                     <div style="font-size:1.1rem;font-weight:700;color:var(--text-1);margin-top:2px;display:flex;align-items:center;gap:8px">
                       <span style="color:${fromFam.color}">${fromFam.label} (${t.fromHead.name})</span>
                       <span style="color:var(--text-3)">➔</span>
@@ -1097,6 +1222,13 @@
     function renderExpenses() {
       if (!_data) return;
       let list = _data.expenses || [];
+
+      // Period filter
+      if (_activePeriod !== 'all') {
+        list = list.filter(e => (e.period || 'pre_trip') === _activePeriod);
+      }
+
+      // Currency / Type filter
       if (_filter === 'TRY') list = list.filter(e => e.currency === 'TRY' && e.category !== 'payment');
       else if (_filter === 'EUR') list = list.filter(e => e.currency === 'EUR' && e.category !== 'payment');
       else if (_filter === 'payment') list = list.filter(e => e.category === 'payment');
@@ -1105,21 +1237,22 @@
       const el = document.getElementById('exp-list');
 
       if (!sorted.length) {
-        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-3)">Bu kategoride harcama bulunamadı.</div>`;
+        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-3)">Bu filtreye uygun harcama bulunamadı.</div>`;
         return;
       }
 
       el.innerHTML = sorted.map((exp, i) => {
         const isPayment = exp.category === 'payment';
+        const isFood = exp.category === 'food' || (exp.period === 'on_trip');
         const cat = CAT[exp.category] || CAT.other;
         const payer = _data.persons.find(p => p.id === exp.paidBy);
         const payFam = famOf(payer?.family);
         const isTRY = exp.currency === 'TRY';
+        const periodTag = (exp.period === 'on_trip' || exp.category === 'food') ? '🍽️ Adisyon' : '✈️ Tatil Öncesi';
 
         if (isPayment) {
           const receiverId = Object.keys(exp.shares || {})[0];
           const receiver = _data.persons.find(p => p.id === receiverId);
-          const recFam = famOf(receiver?.family);
           return `<div class="exp-card animate-in" style="animation-delay:${i * 35}ms;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25)">
             <div class="exp-head">
               <div class="exp-icon" style="background:rgba(16,185,129,0.18)">💸</div>
@@ -1155,6 +1288,29 @@
           </div>`;
         }).join('');
 
+        // Line items breakdown if available
+        let lineItemsHTML = '';
+        if (Array.isArray(exp.items) && exp.items.length > 0) {
+          lineItemsHTML = `
+            <div style="margin-bottom:12px;background:rgba(255,255,255,0.03);border:1px dashed var(--border);border-radius:var(--r-md);padding:10px 14px">
+              <div style="font-size:.72rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">🧾 Fiş Kalemleri</div>
+              ${exp.items.map(item => {
+                const consumerNames = (item.consumers || []).map(cid => {
+                  if (cid === 'all') return 'Herkes';
+                  return _data.persons.find(p => p.id === cid)?.name || cid;
+                }).join(', ');
+                return `
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,0.03)">
+                    <div>
+                      <span style="font-weight:500">${item.name}</span>
+                      <span style="font-size:.75rem;color:var(--text-3);margin-left:6px">(${consumerNames})</span>
+                    </div>
+                    <strong style="color:var(--text-1)">${fmt(item.amount, exp.currency)}</strong>
+                  </div>`;
+              }).join('')}
+            </div>`;
+        }
+
         return `<div class="exp-card animate-in" style="animation-delay:${i * 35}ms" onclick="toggleExp(this)">
           <div class="exp-head">
             <div class="exp-icon" style="background:${cat.bg}">${cat.icon}</div>
@@ -1162,6 +1318,7 @@
               <div class="exp-title">${exp.title}</div>
               <div class="exp-meta">
                 <span class="badge ${isTRY ? 'badge-try' : 'badge-eur'}" style="font-size:.7rem">${cat.label}</span>
+                <span class="badge" style="font-size:.68rem;background:var(--glass);color:var(--text-3)">${periodTag}</span>
                 ${fmtDate(exp.date)}
               </div>
             </div>
@@ -1175,6 +1332,7 @@
             <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
           </div>
           <div class="exp-body">
+            ${lineItemsHTML}
             ${exp.notes ? `<div class="exp-note">💬 ${exp.notes}</div>` : ''}
             <div style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Kişi Payları</div>
             <div class="shares-grid">${shareItems}</div>
