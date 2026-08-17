@@ -235,7 +235,56 @@
       "shares": {
         "cem": 80000
       }
+    },
+    {
+      "id": "id_yxuzc84",
+      "title": "roma-napoli treni",
+      "currency": "EUR",
+      "totalAmount": 190.8,
+      "paidBy": "cem",
+      "date": "2026-08-17",
+      "category": "other",
+      "notes": "",
+      "shares": {
+        "cem": 31.8,
+        "zeynep": 31.8,
+        "can": 31.8,
+        "ali": 31.8,
+        "fatma": 31.8,
+        "defne": 31.8
+      }
+    },
+    {
+      "id": "id_h8y8r44",
+      "title": "kolezyum-palatine-forum",
+      "currency": "TRY",
+      "totalAmount": 72,
+      "paidBy": "cem",
+      "date": "2026-08-17",
+      "category": "other",
+      "notes": "",
+      "shares": {
+        "cem": 12,
+        "zeynep": 12,
+        "can": 12,
+        "ali": 12,
+        "fatma": 12,
+        "defne": 12
+      }
+    },
+    {
+      "id": "id_2tet43v",
+      "title": "Ödeme: Ferhat -> Cem",
+      "currency": "TRY",
+      "totalAmount": 10000,
+      "paidBy": "ali",
+      "date": "2026-08-17",
+      "category": "payment",
+      "notes": "",
+      "shares": {
+        "cem": 10000
+      }
     }
   ],
-  "version": 53
+  "version": 56
 }
