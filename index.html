@@ -588,33 +588,29 @@
           <div class="cur-icon cur-icon-try">₺</div>
           <h2>Türk Lirası Hesabı</h2>
         </div>
-        <div class="two-col">
-          <div>
-            <div
-              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
-              Kişi Bakiyeleri</div>
-            <div
-              style="border-radius:var(--r-xl);border:1px solid var(--border);overflow:hidden;background:var(--glass)">
-              <table class="table" id="try-tbl">
-                <thead>
-                  <tr>
-                    <th>Kişi</th>
-                    <th class="text-right">Ödedi</th>
-                    <th class="text-right">Payı</th>
-                    <th class="text-right">Bakiye</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div>
-            <div
-              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
-              Ödeme Planı ₺</div>
-            <div id="try-settle" class="settle-list"></div>
-          </div>
+
+        <!-- Summary Cards -->
+        <div class="stats-grid" id="try-summary-cards" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));"></div>
+
+        <!-- Family Table -->
+        <div style="border-radius:var(--r-xl);border:1px solid var(--border);overflow:hidden;background:var(--glass);margin-bottom:18px">
+          <table class="table" id="try-tbl">
+            <thead>
+              <tr>
+                <th>Aile / Katılımcılar</th>
+                <th class="text-right">Cebinden Çıkan (Harcama)</th>
+                <th class="text-right">Ailenin Payı</th>
+                <th class="text-right">Harcama Bakiyesi</th>
+                <th class="text-right">Ara Ödeme (Elden/Banka)</th>
+                <th class="text-right">Kalan Net Durum</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
+
+        <!-- Settle Callout -->
+        <div id="try-settle" style="margin-bottom:10px"></div>
       </div>
 
       <!-- EUR Section -->
@@ -623,43 +619,40 @@
           <div class="cur-icon cur-icon-eur">€</div>
           <h2>Euro Hesabı</h2>
         </div>
-        <div class="two-col">
-          <div>
-            <div
-              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
-              Kişi Bakiyeleri</div>
-            <div
-              style="border-radius:var(--r-xl);border:1px solid var(--border);overflow:hidden;background:var(--glass)">
-              <table class="table" id="eur-tbl">
-                <thead>
-                  <tr>
-                    <th>Kişi</th>
-                    <th class="text-right">Ödedi</th>
-                    <th class="text-right">Payı</th>
-                    <th class="text-right">Bakiye</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-          <div>
-            <div
-              style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">
-              Ödeme Planı €</div>
-            <div id="eur-settle" class="settle-list"></div>
-          </div>
+
+        <!-- Summary Cards -->
+        <div class="stats-grid" id="eur-summary-cards" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));"></div>
+
+        <!-- Family Table -->
+        <div style="border-radius:var(--r-xl);border:1px solid var(--border);overflow:hidden;background:var(--glass);margin-bottom:18px">
+          <table class="table" id="eur-tbl">
+            <thead>
+              <tr>
+                <th>Aile / Katılımcılar</th>
+                <th class="text-right">Cebinden Çıkan (Harcama)</th>
+                <th class="text-right">Ailenin Payı</th>
+                <th class="text-right">Harcama Bakiyesi</th>
+                <th class="text-right">Ara Ödeme (Elden/Banka)</th>
+                <th class="text-right">Kalan Net Durum</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
+
+        <!-- Settle Callout -->
+        <div id="eur-settle" style="margin-bottom:10px"></div>
       </div>
 
       <!-- Expenses -->
       <div class="section animate-in">
         <div class="filter-row">
-          <h2>Tüm Harcamalar</h2>
+          <h2>Tüm Harcamalar & Ödemeler</h2>
           <div class="filter-btns">
             <button class="filter-btn active" data-f="all" onclick="setFilter(this,'all')">Tümü</button>
-            <button class="filter-btn" data-f="TRY" onclick="setFilter(this,'TRY')">₺ TL</button>
-            <button class="filter-btn" data-f="EUR" onclick="setFilter(this,'EUR')">€ EUR</button>
+            <button class="filter-btn" data-f="TRY" onclick="setFilter(this,'TRY')">₺ TL Harcamalar</button>
+            <button class="filter-btn" data-f="EUR" onclick="setFilter(this,'EUR')">€ EUR Harcamalar</button>
+            <button class="filter-btn" data-f="payment" onclick="setFilter(this,'payment')">💸 Ara Ödemeler</button>
           </div>
         </div>
         <div id="exp-list" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -779,78 +772,139 @@
     }
 
     /* ================================================================
-       CALCULATIONS
+       CALCULATIONS (Family Settlement & Payments)
     ================================================================ */
-    function calcBalances(data, cur) {
-      const paid = {}, share = {};
-      data.persons.forEach(p => { paid[p.id] = 0; share[p.id] = 0; });
-      data.expenses.filter(e => e.currency === cur).forEach(exp => {
-        paid[exp.paidBy] = (paid[exp.paidBy] || 0) + exp.totalAmount;
-        Object.entries(exp.shares || {}).forEach(([id, s]) => {
-          share[id] = (share[id] || 0) + (+s || 0);
+    function calcFamilyBalances(data, cur) {
+      // 1. Gerçek harcamalar ile ara ödemeleri (borç transferlerini) ayır
+      const curExpenses = (data.expenses || []).filter(e => e.currency === cur && e.category !== 'payment');
+      const curPayments = (data.expenses || []).filter(e => e.currency === cur && e.category === 'payment');
+
+      const totalExpense = curExpenses.reduce((sum, e) => sum + e.totalAmount, 0);
+      const totalPayments = curPayments.reduce((sum, e) => sum + e.totalAmount, 0);
+
+      // Aileleri ve aile temsilcilerini tespit et
+      const famList = [...new Set((data.persons || []).map(p => p.family))];
+      const heads = {};
+      const famMembers = {};
+
+      famList.forEach(f => {
+        famMembers[f] = data.persons.filter(p => p.family === f);
+        heads[f] = famMembers[f][0]; // İlk kişi aile temsilcisi
+      });
+
+      const famPaid = {}, famShare = {}, famPaymentPaid = {}, famPaymentReceived = {};
+      famList.forEach(f => {
+        famPaid[f] = 0;
+        famShare[f] = 0;
+        famPaymentPaid[f] = 0;
+        famPaymentReceived[f] = 0;
+      });
+
+      // Gerçek tatil harcamaları
+      curExpenses.forEach(exp => {
+        const payer = data.persons.find(p => p.id === exp.paidBy);
+        if (payer && famPaid[payer.family] !== undefined) {
+          famPaid[payer.family] += exp.totalAmount;
+        }
+        Object.entries(exp.shares || {}).forEach(([pid, amt]) => {
+          const person = data.persons.find(p => p.id === pid);
+          if (person && famShare[person.family] !== undefined) {
+            famShare[person.family] += (+amt || 0);
+          }
         });
       });
 
-      // Find family heads (first person defined in each family group)
-      const heads = {};
-      data.persons.forEach(p => {
-        if (!heads[p.family]) {
-          heads[p.family] = p;
+      // Aileler arası ara ödemeler / borç transferleri
+      const paymentList = [];
+      curPayments.forEach(pay => {
+        const payer = data.persons.find(p => p.id === pay.paidBy);
+        const receiverId = Object.keys(pay.shares || {})[0];
+        const receiver = data.persons.find(p => p.id === receiverId);
+        const amt = pay.totalAmount || 0;
+
+        if (payer && famPaymentPaid[payer.family] !== undefined) {
+          famPaymentPaid[payer.family] += amt;
+        }
+        if (receiver && famPaymentReceived[receiver.family] !== undefined) {
+          famPaymentReceived[receiver.family] += amt;
+        }
+        if (payer && receiver) {
+          paymentList.push({
+            payer,
+            receiver,
+            amt,
+            title: pay.title,
+            date: pay.date,
+            notes: pay.notes
+          });
         }
       });
 
-      // Aggregate paid and share under family heads
-      const headPaid = {}, headShare = {}, headNet = {};
-      Object.keys(heads).forEach(fam => {
-        const headId = heads[fam].id;
-        headPaid[headId] = 0;
-        headShare[headId] = 0;
+      // Net bakiyeler
+      const famInitialBalance = {}; // Harcamadan doğan bakiye = Paid - Share
+      const famNetBalance = {};     // Kalan net borç/alacak = Initial + (Ödenen Ara Ödeme - Alınan Ara Ödeme)
+      
+      famList.forEach(f => {
+        famInitialBalance[f] = famPaid[f] - famShare[f];
+        famNetBalance[f] = famInitialBalance[f] + (famPaymentPaid[f] - famPaymentReceived[f]);
       });
 
-      data.persons.forEach(p => {
-        const headId = heads[p.family].id;
-        headPaid[headId] += paid[p.id] || 0;
-        headShare[headId] += share[p.id] || 0;
-      });
-
-      Object.keys(heads).forEach(fam => {
-        const headId = heads[fam].id;
-        headNet[headId] = headPaid[headId] - headShare[headId];
-      });
-
-      return { paid: headPaid, share: headShare, net: headNet, heads };
-    }
-
-    function settlement(net, persons) {
+      // Kalan borç kapatma transferleri
       const cred = [], debt = [];
-      Object.entries(net).forEach(([id, b]) => {
-        const name = persons.find(p => p.id === id)?.name || id;
-        if (b > 0.5) cred.push({ id, name, amt: b });
-        if (b < -0.5) debt.push({ id, name, amt: -b });
+      famList.forEach(f => {
+        const head = heads[f];
+        const net = famNetBalance[f];
+        if (net > 0.5) cred.push({ fam: f, head, amt: net });
+        if (net < -0.5) debt.push({ fam: f, head, amt: -net });
       });
+
       cred.sort((a, b) => b.amt - a.amt);
       debt.sort((a, b) => b.amt - a.amt);
+
       const c = cred.map(x => ({ ...x })), d = debt.map(x => ({ ...x }));
-      const out = [];
+      const remainingTransfers = [];
       let i = 0, j = 0;
       while (i < c.length && j < d.length) {
         const amt = Math.min(c[i].amt, d[j].amt);
-        if (amt > 0.5) out.push({ fromId: d[j].id, from: d[j].name, toId: c[i].id, to: c[i].name, amt: Math.round(amt * 100) / 100 });
+        if (amt > 0.5) {
+          remainingTransfers.push({
+            fromFam: d[j].fam,
+            fromHead: d[j].head,
+            toFam: c[i].fam,
+            toHead: c[i].head,
+            amt: Math.round(amt * 100) / 100
+          });
+        }
         c[i].amt -= amt; d[j].amt -= amt;
         if (c[i].amt < 0.5) i++;
         if (d[j].amt < 0.5) j++;
       }
-      return out;
+
+      return {
+        totalExpense,
+        totalPayments,
+        famList,
+        heads,
+        famMembers,
+        famPaid,
+        famShare,
+        famPaymentPaid,
+        famPaymentReceived,
+        famInitialBalance,
+        famNetBalance,
+        paymentList,
+        remainingTransfers
+      };
     }
 
     /* ================================================================
        FORMATTING
     ================================================================ */
-    const fmtTRY = n => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(n);
+    const fmtTRY = n => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 2 }).format(n);
     const fmtEUR = n => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(n);
     const fmt = (n, cur) => cur === 'TRY' ? fmtTRY(n) : fmtEUR(n);
     const fmtDate = d => d ? new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
-    const initials = name => name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const initials = name => (name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
     const famOf = f => FAM[f] || FAM._;
 
     /* ================================================================
@@ -882,108 +936,210 @@
     }
 
     function renderStats(d) {
-      const tryTot = d.expenses.filter(e => e.currency === 'TRY').reduce((s, e) => s + e.totalAmount, 0);
-      const eurTot = d.expenses.filter(e => e.currency === 'EUR').reduce((s, e) => s + e.totalAmount, 0);
+      const realTRY = d.expenses.filter(e => e.currency === 'TRY' && e.category !== 'payment').reduce((s, e) => s + e.totalAmount, 0);
+      const realEUR = d.expenses.filter(e => e.currency === 'EUR' && e.category !== 'payment').reduce((s, e) => s + e.totalAmount, 0);
+      const realExpCount = d.expenses.filter(e => e.category !== 'payment').length;
+      const payCount = d.expenses.filter(e => e.category === 'payment').length;
+
       document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-value" style="color:var(--try)">${fmtTRY(tryTot)}</div>
-      <div class="stat-label">Toplam ₺ Harcama</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" style="color:var(--eur)">${fmtEUR(eurTot)}</div>
-      <div class="stat-label">Toplam € Harcama</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${d.expenses.length}</div>
-      <div class="stat-label">Harcama Kalemi</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${d.persons?.length || 0}</div>
-      <div class="stat-label">Katılımcı</div>
-    </div>`;
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--try)">${fmtTRY(realTRY)}</div>
+          <div class="stat-label">Toplam ₺ Tatil Harcaması</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--eur)">${fmtEUR(realEUR)}</div>
+          <div class="stat-label">Toplam € Tatil Harcaması</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${realExpCount} <span style="font-size:0.9rem;font-weight:400;color:var(--text-3)">${payCount > 0 ? '(+' + payCount + ' ödeme)' : ''}</span></div>
+          <div class="stat-label">Harcama Kalemi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${d.persons?.length || 0} <span style="font-size:0.9rem;font-weight:400;color:var(--text-3)">(${[...new Set(d.persons.map(p=>p.family))].length} Aile)</span></div>
+          <div class="stat-label">Katılımcı</div>
+        </div>`;
     }
 
     function renderCurrency(d, cur) {
       const has = d.expenses.some(e => e.currency === cur);
       const secId = cur === 'TRY' ? 'try-section' : 'eur-section';
       if (!has) { document.getElementById(secId).classList.add('hidden'); return; }
+      document.getElementById(secId).classList.remove('hidden');
 
-      const { paid, share, net, heads } = calcBalances(d, cur);
+      const calc = calcFamilyBalances(d, cur);
       const isTRY = cur === 'TRY';
 
-      // Balance table (Showing only Family Representatives/Heads)
+      // 1. Summary Cards Row
+      const cardsId = isTRY ? 'try-summary-cards' : 'eur-summary-cards';
+      const cardsEl = document.getElementById(cardsId);
+      if (cardsEl) {
+        let famSharesHTML = calc.famList.map(f => {
+          const fam = famOf(f);
+          const share = calc.famShare[f] || 0;
+          const pct = calc.totalExpense > 0 ? Math.round((share / calc.totalExpense) * 100) : 0;
+          return `<div class="stat-card" style="padding:14px">
+            <div class="stat-value" style="font-size:1.15rem;color:${fam.color}">${fmt(share, cur)}</div>
+            <div class="stat-label">${fam.label} Payı (%${pct})</div>
+          </div>`;
+        }).join('');
+
+        cardsEl.innerHTML = `
+          <div class="stat-card" style="padding:14px">
+            <div class="stat-value" style="font-size:1.15rem;color:var(--${isTRY ? 'try' : 'eur'})">${fmt(calc.totalExpense, cur)}</div>
+            <div class="stat-label">Toplam Ortak Harcama</div>
+          </div>
+          ${famSharesHTML}
+          ${calc.totalPayments > 0 ? `
+          <div class="stat-card" style="padding:14px;background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.25)">
+            <div class="stat-value" style="font-size:1.15rem;color:#10B981">${fmt(calc.totalPayments, cur)}</div>
+            <div class="stat-label">Yapılan Ara Ödeme</div>
+          </div>` : ''}`;
+      }
+
+      // 2. Family Table
       const tblId = isTRY ? 'try-tbl' : 'eur-tbl';
-      document.querySelector('#' + tblId + ' tbody').innerHTML = Object.values(heads).map(head => {
-        const fam = famOf(head.family);
-        const n = net[head.id] || 0;
-        const cls = n > 0.5 ? 'bal-pos' : n < -0.5 ? 'bal-neg' : 'bal-zer';
-        const lbl = n > 0.5 ? '▲ Alacaklı' : n < -0.5 ? '▼ Borçlu' : '— Denkler';
+      document.querySelector('#' + tblId + ' tbody').innerHTML = calc.famList.map(f => {
+        const fam = famOf(f);
+        const head = calc.heads[f];
+        const membersStr = (calc.famMembers[f] || []).map(m => m.name).join(', ');
+        const paid = calc.famPaid[f] || 0;
+        const share = calc.famShare[f] || 0;
+        const initial = calc.famInitialBalance[f] || 0;
+        const net = calc.famNetBalance[f] || 0;
+        const payPaid = calc.famPaymentPaid[f] || 0;
+        const payRec = calc.famPaymentReceived[f] || 0;
+        const netPayment = payPaid - payRec;
+
+        const netCls = net > 0.5 ? 'bal-pos' : net < -0.5 ? 'bal-neg' : 'bal-zer';
+        const netLbl = net > 0.5 ? '▲ Alacaklı' : net < -0.5 ? '▼ Borçlu' : '— Hesap Denk';
+
         return `<tr>
-      <td><div class="person-cell">
-        <div class="avatar avatar-sm" style="background:${fam.bg};color:${fam.color}">${initials(head.name)}</div>
-        <div>
-          <div style="font-weight:600">${head.name}</div>
-          <div style="font-size:.72rem;color:var(--text-3)">${fam.label} Temsilcisi</div>
-        </div>
-      </div></td>
-      <td class="text-right" style="font-size:.875rem">${fmt(paid[head.id] || 0, cur)}</td>
-      <td class="text-right" style="font-size:.875rem">${fmt(share[head.id] || 0, cur)}</td>
-      <td class="text-right ${cls}">
-        <div>${n > 0.5 ? '+' : ''}${fmt(Math.abs(n), cur)}</div>
-        <div style="font-size:.68rem;font-weight:400;opacity:.8">${lbl}</div>
-      </td>
-    </tr>`;
+          <td>
+            <div class="person-cell">
+              <div class="avatar avatar-sm" style="background:${fam.bg};color:${fam.color}">${initials(head?.name || fam.label)}</div>
+              <div>
+                <div style="font-weight:700;font-size:0.95rem">${fam.label} <span style="font-size:0.78rem;font-weight:400;color:var(--text-3)">(${head?.name} Temsilci)</span></div>
+                <div style="font-size:.72rem;color:var(--text-3)">${membersStr}</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-right" style="font-weight:600">${fmt(paid, cur)}</td>
+          <td class="text-right" style="font-weight:600">${fmt(share, cur)}</td>
+          <td class="text-right" style="font-weight:600;color:${initial > 0.5 ? 'var(--green)' : initial < -0.5 ? 'var(--red)' : 'var(--text-3)'}">
+            ${initial > 0.5 ? '+' : ''}${fmt(initial, cur)}
+          </td>
+          <td class="text-right" style="font-size:0.85rem">
+            ${netPayment > 0.5 ? `<span style="color:#10B981">+${fmt(netPayment, cur)} (Ödedi)</span>` : netPayment < -0.5 ? `<span style="color:#818CF8">${fmt(netPayment, cur)} (Aldı)</span>` : '<span style="color:var(--text-3)">—</span>'}
+          </td>
+          <td class="text-right ${netCls}" style="font-size:1rem;font-weight:700">
+            <div>${net > 0.5 ? '+' : ''}${fmt(net, cur)}</div>
+            <div style="font-size:.7rem;font-weight:500;opacity:.9">${netLbl}</div>
+          </td>
+        </tr>`;
       }).join('');
 
-      // Settlement (Only between Family Representatives/Heads)
+      // 3. Settle Callout (Ödeme Planı & Son Durum)
       const settleId = isTRY ? 'try-settle' : 'eur-settle';
-      const transfers = settlement(net, Object.values(heads));
       const el = document.getElementById(settleId);
 
-      if (!transfers.length) {
-        el.innerHTML = `<div class="settle-empty">
-      <div style="font-size:1.5rem">✅</div>
-      <div>Herkes hesabını tamamlamış!</div>
-    </div>`;
+      let paymentsListHTML = '';
+      if (calc.paymentList.length > 0) {
+        paymentsListHTML = `
+          <div style="margin-bottom:12px;font-size:0.82rem;color:var(--text-2);background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:var(--r-md);border:1px dashed var(--border)">
+            <strong style="color:var(--text-1)">💳 Kayıtlı Ara Ödemeler:</strong>
+            ${calc.paymentList.map(p => `
+              <div style="margin-top:4px;display:flex;align-items:center;justify-content:space-between">
+                <span>• ${p.payer.name} ➔ ${p.receiver.name} (${fmtDate(p.date)}${p.notes ? ' - ' + p.notes : ''})</span>
+                <strong style="color:#10B981">${fmt(p.amt, cur)}</strong>
+              </div>
+            `).join('')}
+          </div>`;
+      }
+
+      if (!calc.remainingTransfers.length) {
+        el.innerHTML = `
+          ${paymentsListHTML}
+          <div class="settle-empty" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:var(--r-lg);padding:18px">
+            <div style="font-size:1.75rem">🎉</div>
+            <div style="font-weight:700;font-size:1.05rem;color:#10B981">Hesaplar Tamamen Kapatılmış / Denk!</div>
+            <div style="font-size:0.825rem;color:var(--text-3);margin-top:2px">Kimin kime borcu varsa ödenmiş, hiçbir açık bakiye kalmamıştır.</div>
+          </div>`;
         return;
       }
 
-      el.innerHTML = transfers.map((t, i) => {
-        const fromFam = famOf(d.persons.find(p => p.id === t.fromId)?.family);
-        const toFam = famOf(d.persons.find(p => p.id === t.toId)?.family);
-        return `<div class="transfer-row animate-in" style="animation-delay:${i * 60}ms">
-      <div class="transfer-from-to">
-        <div class="transfer-person">
-          <div class="avatar avatar-sm" style="background:${fromFam.bg};color:${fromFam.color}">${initials(t.from)}</div>
-          ${t.from}
-        </div>
-        <span class="transfer-arrow">→</span>
-        <div class="transfer-person">
-          <div class="avatar avatar-sm" style="background:${toFam.bg};color:${toFam.color}">${initials(t.to)}</div>
-          ${t.to}
-        </div>
-      </div>
-      <div class="transfer-amount" style="color:var(--${isTRY ? 'try' : 'eur'})">${fmt(t.amt, cur)}</div>
-    </div>`;
-      }).join('');
+      el.innerHTML = `
+        ${paymentsListHTML}
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${calc.remainingTransfers.map(t => {
+            const fromFam = famOf(t.fromFam);
+            const toFam = famOf(t.toFam);
+            return `
+              <div class="transfer-row animate-in" style="background:linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(245,158,11,0.08) 100%);border:1.5px solid var(--border-hover);padding:16px 20px;border-radius:var(--r-xl);align-items:center;">
+                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                  <div style="font-size:1.8rem">👉</div>
+                  <div>
+                    <div style="font-size:0.75rem;color:var(--text-3);text-transform:uppercase;font-weight:600;letter-spacing:0.06em">Hesabı Kapatmak İçin Kalan Net Ödeme:</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:var(--text-1);margin-top:2px;display:flex;align-items:center;gap:8px">
+                      <span style="color:${fromFam.color}">${fromFam.label} (${t.fromHead.name})</span>
+                      <span style="color:var(--text-3)">➔</span>
+                      <span style="color:${toFam.color}">${toFam.label} (${t.toHead.name})</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:1.6rem;font-weight:800;color:var(--${isTRY ? 'try' : 'eur'})">
+                  ${fmt(t.amt, cur)}
+                </div>
+              </div>`;
+          }).join('')}
+        </div>`;
     }
 
     function renderExpenses() {
       if (!_data) return;
-      const list = _filter === 'all' ? _data.expenses : _data.expenses.filter(e => e.currency === _filter);
+      let list = _data.expenses || [];
+      if (_filter === 'TRY') list = list.filter(e => e.currency === 'TRY' && e.category !== 'payment');
+      else if (_filter === 'EUR') list = list.filter(e => e.currency === 'EUR' && e.category !== 'payment');
+      else if (_filter === 'payment') list = list.filter(e => e.category === 'payment');
+
       const sorted = [...list].sort((a, b) => new Date(b.date) - new Date(a.date));
       const el = document.getElementById('exp-list');
 
       if (!sorted.length) {
-        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-3)">Harcama bulunamadı.</div>`;
+        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-3)">Bu kategoride harcama bulunamadı.</div>`;
         return;
       }
 
       el.innerHTML = sorted.map((exp, i) => {
+        const isPayment = exp.category === 'payment';
         const cat = CAT[exp.category] || CAT.other;
         const payer = _data.persons.find(p => p.id === exp.paidBy);
         const payFam = famOf(payer?.family);
         const isTRY = exp.currency === 'TRY';
+
+        if (isPayment) {
+          const receiverId = Object.keys(exp.shares || {})[0];
+          const receiver = _data.persons.find(p => p.id === receiverId);
+          const recFam = famOf(receiver?.family);
+          return `<div class="exp-card animate-in" style="animation-delay:${i * 35}ms;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25)">
+            <div class="exp-head">
+              <div class="exp-icon" style="background:rgba(16,185,129,0.18)">💸</div>
+              <div class="exp-info">
+                <div class="exp-title" style="color:#10B981;font-weight:700">${exp.title}</div>
+                <div class="exp-meta">
+                  <span class="badge" style="background:rgba(16,185,129,0.2);color:#10B981;font-size:.7rem">Ara Ödeme / Transfer</span>
+                  ${fmtDate(exp.date)}
+                </div>
+              </div>
+              <div class="exp-right">
+                <div class="exp-amount" style="color:#10B981">${fmt(exp.totalAmount, exp.currency)}</div>
+                <div class="exp-payer" style="font-size:0.8rem">
+                  ${payer?.name || '?'} ➔ ${receiver?.name || '?'}
+                </div>
+              </div>
+            </div>
+            ${exp.notes ? `<div class="exp-body" style="padding-top:8px"><div class="exp-note">💬 ${exp.notes}</div></div>` : ''}
+          </div>`;
+        }
 
         const shareItems = Object.entries(exp.shares || {}).map(([pid, s]) => {
           const p = _data.persons.find(x => x.id === pid);
@@ -991,39 +1147,39 @@
           const f = famOf(p.family);
           const val = +s || 0;
           return `<div class="share-item">
-        <div class="share-person">
-          <div class="avatar" style="width:20px;height:20px;font-size:.6rem;background:${f.bg};color:${f.color}">${initials(p.name)}</div>
-          <span class="share-name">${p.name}</span>
-        </div>
-        <div class="share-amt" style="${val === 0 ? 'color:var(--text-3)' : ''}">${fmt(val, exp.currency)}</div>
-      </div>`;
+            <div class="share-person">
+              <div class="avatar" style="width:20px;height:20px;font-size:.6rem;background:${f.bg};color:${f.color}">${initials(p.name)}</div>
+              <span class="share-name">${p.name}</span>
+            </div>
+            <div class="share-amt" style="${val === 0 ? 'color:var(--text-3)' : ''}">${fmt(val, exp.currency)}</div>
+          </div>`;
         }).join('');
 
         return `<div class="exp-card animate-in" style="animation-delay:${i * 35}ms" onclick="toggleExp(this)">
-      <div class="exp-head">
-        <div class="exp-icon" style="background:${cat.bg}">${cat.icon}</div>
-        <div class="exp-info">
-          <div class="exp-title">${exp.title}</div>
-          <div class="exp-meta">
-            <span class="badge ${isTRY ? 'badge-try' : 'badge-eur'}" style="font-size:.7rem">${cat.label}</span>
-            ${fmtDate(exp.date)}
+          <div class="exp-head">
+            <div class="exp-icon" style="background:${cat.bg}">${cat.icon}</div>
+            <div class="exp-info">
+              <div class="exp-title">${exp.title}</div>
+              <div class="exp-meta">
+                <span class="badge ${isTRY ? 'badge-try' : 'badge-eur'}" style="font-size:.7rem">${cat.label}</span>
+                ${fmtDate(exp.date)}
+              </div>
+            </div>
+            <div class="exp-right">
+              <div class="exp-amount" style="color:var(--${isTRY ? 'try' : 'eur'})">${fmt(exp.totalAmount, exp.currency)}</div>
+              <div class="exp-payer">
+                <div class="avatar" style="width:16px;height:16px;font-size:.55rem;background:${payFam.bg};color:${payFam.color}">${initials(payer?.name || '?')}</div>
+                ${payer?.name || '?'} ödedi
+              </div>
+            </div>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
           </div>
-        </div>
-        <div class="exp-right">
-          <div class="exp-amount" style="color:var(--${isTRY ? 'try' : 'eur'})">${fmt(exp.totalAmount, exp.currency)}</div>
-          <div class="exp-payer">
-            <div class="avatar" style="width:16px;height:16px;font-size:.55rem;background:${payFam.bg};color:${payFam.color}">${initials(payer?.name || '?')}</div>
-            ${payer?.name || '?'} ödedi
+          <div class="exp-body">
+            ${exp.notes ? `<div class="exp-note">💬 ${exp.notes}</div>` : ''}
+            <div style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Kişi Payları</div>
+            <div class="shares-grid">${shareItems}</div>
           </div>
-        </div>
-        <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-      </div>
-      <div class="exp-body">
-        ${exp.notes ? `<div class="exp-note">💬 ${exp.notes}</div>` : ''}
-        <div style="font-size:.72rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Kişi Payları</div>
-        <div class="shares-grid">${shareItems}</div>
-      </div>
-    </div>`;
+        </div>`;
       }).join('');
     }
 

@@ -833,14 +833,17 @@ function renderAll() {
 }
 
 /* ================================================================
-   EXPENSES
+   EXPENSES & PAYMENTS
 ================================================================ */
+let editPaymentId = null;
+
 function renderExpenses() {
   const el = document.getElementById('exp-list');
-  const count = S.expenses.length;
-  document.getElementById('exp-count-title').textContent = `Harcamalar (${count})`;
+  const realCount = S.expenses.filter(e => e.category !== 'payment').length;
+  const payCount = S.expenses.filter(e => e.category === 'payment').length;
+  document.getElementById('exp-count-title').textContent = `Harcamalar (${realCount}${payCount > 0 ? ' + ' + payCount + ' ödeme' : ''})`;
 
-  if (!count) {
+  if (!S.expenses.length) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">💸</div><p>Henüz harcama yok.<br>Yukarıdaki butona tıklayın.</p></div>`;
     return;
   }
@@ -848,10 +851,33 @@ function renderExpenses() {
   const sorted = [...S.expenses].sort((a,b) => new Date(b.date)-new Date(a.date));
 
   el.innerHTML = sorted.map(exp => {
+    const isPayment = exp.category === 'payment';
     const cat   = CAT[exp.category] || CAT.other;
     const payer = S.persons.find(p=>p.id===exp.paidBy);
     const payFam= famOf(payer?.family);
     const isTRY = exp.currency==='TRY';
+
+    if (isPayment) {
+      const receiverId = Object.keys(exp.shares || {})[0];
+      const receiver = S.persons.find(p=>p.id===receiverId);
+      return `<div class="exp-item animate-in" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25)">
+        <div class="exp-icon-sm" style="background:rgba(16,185,129,0.18)">💸</div>
+        <div class="exp-info">
+          <div class="exp-title2" style="color:#10B981;font-weight:700">${exp.title}</div>
+          <div class="exp-meta2">
+            <span class="badge" style="background:rgba(16,185,129,0.2);color:#10B981;font-size:.68rem">Ara Ödeme</span>
+            ${exp.date ? new Date(exp.date).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : ''}
+            <span style="font-size:0.75rem;color:var(--text-2)">${payer?.name || '?'} ➔ ${receiver?.name || '?'}</span>
+          </div>
+        </div>
+        <div class="exp-amt" style="color:#10B981">${fmt(exp.totalAmount,exp.currency)}</div>
+        <div class="exp-actions">
+          <button class="btn btn-secondary btn-icon btn-sm" title="Düzenle" onclick="openPaymentModal('${exp.id}')">✏️</button>
+          <button class="btn btn-danger btn-icon btn-sm"    title="Sil"     onclick="confirmDelete('${exp.id}','exp')">🗑️</button>
+        </div>
+      </div>`;
+    }
+
     return `<div class="exp-item animate-in">
       <div class="exp-icon-sm" style="background:${cat.bg}">${cat.icon}</div>
       <div class="exp-info">
@@ -872,6 +898,86 @@ function renderExpenses() {
       </div>
     </div>`;
   }).join('');
+}
+
+/* ================================================================
+   PAYMENT MODAL
+================================================================ */
+function openPaymentModal(id) {
+  editPaymentId = id;
+  const payFrom = document.getElementById('pay-from');
+  const payTo = document.getElementById('pay-to');
+
+  payFrom.innerHTML = S.persons.map(p => `<option value="${p.id}">${p.name} (${famOf(p.family).label})</option>`).join('');
+  payTo.innerHTML = S.persons.map(p => `<option value="${p.id}">${p.name} (${famOf(p.family).label})</option>`).join('');
+
+  if (id) {
+    const exp = S.expenses.find(e => e.id === id);
+    if (!exp) return;
+    document.getElementById('pay-amount').value = exp.totalAmount || '';
+    document.getElementById('pay-currency').value = exp.currency || 'TRY';
+    document.getElementById('pay-date').value = exp.date || '';
+    payFrom.value = exp.paidBy || '';
+    const recId = Object.keys(exp.shares || {})[0];
+    if (recId) payTo.value = recId;
+  } else {
+    document.getElementById('pay-amount').value = '';
+    document.getElementById('pay-currency').value = 'TRY';
+    document.getElementById('pay-date').value = new Date().toISOString().slice(0, 10);
+    if (S.persons.length >= 2) {
+      payFrom.value = S.persons[0].id;
+      payTo.value = S.persons[1].id;
+    }
+  }
+
+  document.getElementById('payment-modal').classList.remove('hidden');
+}
+
+function closePaymentModal() {
+  document.getElementById('payment-modal').classList.add('hidden');
+  editPaymentId = null;
+}
+
+function savePayment() {
+  const fromId = document.getElementById('pay-from').value;
+  const toId = document.getElementById('pay-to').value;
+  const amount = +document.getElementById('pay-amount').value;
+  const currency = document.getElementById('pay-currency').value;
+  const date = document.getElementById('pay-date').value;
+
+  if (!fromId || !toId) { toast('Ödeyen ve alan kişi seçilmelidir', 'error'); return; }
+  if (fromId === toId) { toast('Ödeyen ve alan kişi aynı olamaz!', 'error'); return; }
+  if (!amount || amount <= 0) { toast('Geçerli bir tutar girin', 'error'); return; }
+
+  const fromPerson = S.persons.find(p => p.id === fromId);
+  const toPerson = S.persons.find(p => p.id === toId);
+
+  const title = `Ödeme: ${fromPerson?.name || fromId} -> ${toPerson?.name || toId}`;
+
+  const data = {
+    title,
+    currency,
+    totalAmount: amount,
+    paidBy: fromId,
+    date,
+    category: 'payment',
+    notes: '',
+    shares: {
+      [toId]: amount
+    }
+  };
+
+  if (editPaymentId) {
+    const idx = S.expenses.findIndex(e => e.id === editPaymentId);
+    if (idx !== -1) S.expenses[idx] = { ...S.expenses[idx], ...data };
+  } else {
+    S.expenses.push({ id: uid(), ...data });
+  }
+
+  save();
+  renderExpenses();
+  closePaymentModal();
+  toast(editPaymentId ? 'Ödeme güncellendi' : 'Ara ödeme başarıyla kaydedildi 💸', 'success');
 }
 
 /* ================================================================
