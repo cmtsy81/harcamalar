@@ -701,63 +701,51 @@
     let _activePeriod = 'all'; // 'all' | 'pre_trip' | 'on_trip'
 
     /* ================================================================
-       DATA LOADING
+       DATA LOADING & REFRESH
     ================================================================ */
     async function loadData() {
       let fetched = null;
       let viewCache = null;
       let adminCache = null;
 
-      // 1) Try fetching from backend API or data.json
+      // 1) Try fetching from backend API or data.json with cache-busting
       try {
-        const apiRes = await fetch('/api/data', { cache: 'no-store' });
+        const apiRes = await fetch('/api/data?t=' + Date.now(), { cache: 'no-store' });
         if (apiRes.ok) fetched = await apiRes.json();
       } catch (e) { /* no-op */ }
 
       if (!fetched) {
         try {
-          const r = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
+          const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
           if (r.ok) fetched = await r.json();
         } catch (e) { console.warn('fetch failed:', e.message); }
       }
 
-      // 2) Try loading view cache
+      // 2) Load cached backups if offline
       try {
         const c = localStorage.getItem('tatil_view_cache');
         if (c) viewCache = JSON.parse(c);
       } catch (e) { }
 
-      // 3) Try loading admin cache
       try {
         const a = localStorage.getItem('tatil_harcama_data');
         if (a) adminCache = JSON.parse(a);
       } catch (e) { }
 
-      // Compare versions to find the absolute latest data
+      // Sunucudan/GitHub'dan taze veri geldiyse her zaman onu esas al
       let best = fetched;
-      let source = "sunucu/dosya";
 
-      if (viewCache && Array.isArray(viewCache.expenses) && viewCache.expenses.length > 0) {
-        if (!best || (viewCache.version || 0) > (best.version || 0)) {
-          best = viewCache;
-          source = "önbellek";
-        }
-      }
-      if (adminCache && Array.isArray(adminCache.expenses) && adminCache.expenses.length > 0) {
-        if (!best || (adminCache.version || 0) > (best.version || 0)) {
+      // Eğer internet/sunucu yoksa yerel önbellekten yükle
+      if (!best) {
+        if (adminCache && Array.isArray(adminCache.expenses) && adminCache.expenses.length > 0) {
           best = adminCache;
-          source = "yerel tarayıcı kaydı";
+        } else if (viewCache && Array.isArray(viewCache.expenses) && viewCache.expenses.length > 0) {
+          best = viewCache;
         }
-      }
-      if (!best && fetched) {
-        best = fetched;
       }
 
       if (best) {
         localStorage.setItem('tatil_view_cache', JSON.stringify(best));
-        if (best !== fetched && source !== "sunucu/dosya") {
-          toast(`En güncel veriler yerel hafızadan yüklendi (${source}).`, 'info');
-        }
         return best;
       }
 
@@ -767,6 +755,7 @@
     async function refreshData() {
       toast('Veriler güncelleniyor...', 'info', 1500);
       try {
+        localStorage.removeItem('tatil_view_cache');
         const data = await loadData();
         if (data && data.persons && data.expenses) {
           render(data);
