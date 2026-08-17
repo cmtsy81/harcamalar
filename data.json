@@ -3,7 +3,7 @@
   "destination": "İtalya",
   "startDate": "2026-08-28",
   "endDate": "2026-09-12",
-  "lastUpdated": "2026-07-22",
+  "lastUpdated": "2026-08-17",
   "persons": [
     {
       "id": "cem",
@@ -237,5 +237,5 @@
       }
     }
   ],
-  "version": 51
+  "version": 53
 }

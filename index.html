@@ -730,17 +730,24 @@
         if (a) adminCache = JSON.parse(a);
       } catch (e) { }
 
-      // Compare versions to find the absolute latest data
+      // Compare versions to find the absolute latest data (never prefer an empty cache over real data)
       let best = fetched;
       let source = "sunucu/dosya";
 
-      if (viewCache && (!best || (viewCache.version || 0) > (best.version || 0))) {
-        best = viewCache;
-        source = "önbellek";
+      if (viewCache && Array.isArray(viewCache.expenses) && viewCache.expenses.length > 0) {
+        if (!best || (viewCache.version || 0) > (best.version || 0)) {
+          best = viewCache;
+          source = "önbellek";
+        }
       }
-      if (adminCache && (!best || (adminCache.version || 0) > (best.version || 0))) {
-        best = adminCache;
-        source = "yerel tarayıcı kaydı";
+      if (adminCache && Array.isArray(adminCache.expenses) && adminCache.expenses.length > 0) {
+        if (!best || (adminCache.version || 0) > (best.version || 0)) {
+          best = adminCache;
+          source = "yerel tarayıcı kaydı";
+        }
+      }
+      if (!best && fetched) {
+        best = fetched;
       }
 
       if (best) {

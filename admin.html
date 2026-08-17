@@ -1446,7 +1446,16 @@ window.addEventListener('load', async () => {
     isServerRunning = false;
   }
 
-  // 2. Sunucu yoksa kayıtlı dosya bağlantısını geri yükle
+  // 2. Statik data.json dosyasını çekmeyi dene
+  let staticData = null;
+  try {
+    const r = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) staticData = await r.json();
+  } catch(e) {}
+
+  const fileData = serverData || staticData;
+
+  // 3. Sunucu yoksa kayıtlı dosya bağlantısını geri yükle
   if (!isServerRunning) {
     try {
       const handle = await getSavedFileHandle();
@@ -1460,34 +1469,30 @@ window.addEventListener('load', async () => {
   }
 
   const hasLocal = load();
+  const localHasExpenses = S && Array.isArray(S.expenses) && S.expenses.length > 0;
+  const fileHasExpenses = fileData && Array.isArray(fileData.expenses) && fileData.expenses.length > 0;
   const localVer = (S && S.version) || 0;
-  const serverVer = (serverData && serverData.version) || 0;
+  const fileVer = (fileData && fileData.version) || 0;
 
-  if (isServerRunning && serverData) {
-    if (hasLocal && localVer > serverVer) {
-      // Yereldeki versiyon daha yeniyse sunucuya aktar
-      await fetch('/api/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(S)
-      });
-      toast(`Yerel taslak data.json'a yazıldı (v${S.version})`, 'success');
-    } else {
-      S = serverData;
-      localStorage.setItem(LS_KEY, JSON.stringify(S));
-    }
+  if (fileHasExpenses && (!localHasExpenses || fileVer >= localVer)) {
+    // Diskteki/sunucudaki veriyi kullan
+    S = fileData;
+    localStorage.setItem(LS_KEY, JSON.stringify(S));
+  } else if (localHasExpenses && fileData && localVer > fileVer && isServerRunning) {
+    // Yereldeki versiyon daha yeniyse sunucuya aktar
+    await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(S)
+    });
+    toast(`Yerel taslak data.json'a yazıldı (v${S.version})`, 'success');
+  } else if (!hasLocal && fileData) {
+    S = fileData;
+    localStorage.setItem(LS_KEY, JSON.stringify(S));
+  }
+
+  if (isServerRunning) {
     updateSyncStatus('server');
-  } else if (!hasLocal) {
-    try {
-      const r = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
-      if (r.ok) {
-        S = await r.json();
-        if (!S.version) S.version = 1;
-        localStorage.setItem(LS_KEY, JSON.stringify(S));
-        toast('data.json\'dan yüklendi', 'success');
-      }
-    } catch(e) { /* no-op */ }
-    updateSyncStatus(localFileHandle ? 'file' : 'local');
   } else {
     updateSyncStatus(localFileHandle ? 'file' : 'local');
   }
