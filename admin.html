@@ -256,6 +256,35 @@
           <button class="btn btn-secondary btn-sm" onclick="loadDefaultData()">🔄 Sunucudan Yenile</button>
         </div>
       </div>
+
+      <!-- Cloud / Mobile GitHub Sync Settings -->
+      <div class="settings-card" style="margin-top:20px;border-color:rgba(99,102,241,0.35);background:linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(168,85,247,0.04) 100%);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:1.4rem">📱</span>
+          <div>
+            <h3 style="margin:0;font-size:1.05rem">Cepten Doğrudan GitHub Senkronizasyonu (Cloud Sync)</h3>
+            <div style="font-size:0.8rem;color:var(--text-3);margin-top:2px">
+              Tatilde bilgisayarınız kapalıyken cep telefonunuzdan harcama girdiğinizde doğrudan GitHub'a kaydetmek için gereklidir.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="form-label" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px">
+            <span>GitHub Personal Access Token (PAT)</span>
+            <a href="https://github.com/settings/tokens/new?scopes=repo&description=Harcama+Takip+Mobil" target="_blank" style="color:var(--eur);font-size:0.75rem;text-decoration:underline">🔑 Token Nasıl Alınır?</a>
+          </label>
+          <input id="gh-token" type="password" class="form-control" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" oninput="saveGitHubToken()">
+          <div style="font-size:0.75rem;color:var(--text-3);margin-top:4px">
+            Token sadece bu telefonun tarayıcı hafızasında saklanır, asla başkasıyla paylaşılmaz.
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn btn-primary btn-sm" onclick="testAndSaveGitHubToken()">🔗 Bağlantıyı Test Et & Kaydet</button>
+          <button class="btn btn-secondary btn-sm" onclick="pullFromGitHubCloud()">📥 GitHub'dan Son Verileri Çek</button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -889,6 +918,57 @@ function importJSON(input) {
   reader.readAsText(file);
 }
 
+function saveGitHubToken() {
+  const token = document.getElementById('gh-token')?.value?.trim();
+  if (token) {
+    localStorage.setItem('tatil_gh_token', token);
+  } else {
+    localStorage.removeItem('tatil_gh_token');
+  }
+}
+
+async function testAndSaveGitHubToken() {
+  const token = document.getElementById('gh-token')?.value?.trim();
+  if (!token) {
+    toast('Lütfen önce bir GitHub Token girin', 'error');
+    return;
+  }
+  toast('GitHub bağlantısı test ediliyor...', 'info', 2000);
+  try {
+    const res = await fetch('https://api.github.com/repos/cmtsy81/harcamalar/contents/data.json', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (res.ok) {
+      localStorage.setItem('tatil_gh_token', token);
+      toast('🎉 GitHub bağlantısı başarılı! Cepten doğrudan kayıt hazır.', 'success', 4000);
+    } else {
+      toast('❌ Bağlantı başarısız (HTTP ' + res.status + '). Token ve yetkileri kontrol edin.', 'error', 5000);
+    }
+  } catch(e) {
+    toast('Bağlantı hatası: ' + e.message, 'error');
+  }
+}
+
+async function pullFromGitHubCloud() {
+  toast('GitHub\'dan güncel veriler çekiliyor...', 'info', 2000);
+  try {
+    const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('data.json çekilemedi');
+    const cloudData = await r.json();
+    if (cloudData && Array.isArray(cloudData.expenses)) {
+      S = cloudData;
+      save();
+      renderAll();
+      toast('✅ GitHub\'dan son veriler başarıyla çekildi!', 'success');
+    }
+  } catch(e) {
+    toast('Veri çekme hatası: ' + e.message, 'error');
+  }
+}
+
 async function pushToGitHub() {
   const btn = document.getElementById('btn-git-push');
   if (btn) {
@@ -896,16 +976,84 @@ async function pushToGitHub() {
     btn.textContent = '⏳ Gönderiliyor...';
   }
   toast('Veriler GitHub\'a yükleniyor...', 'info', 2000);
+
+  // 1. Önce yerel sunucu açık mı kontrol et (PC modu)
+  let usedServer = false;
   try {
     const r = await fetch('/api/git-push', { method: 'POST' });
-    const res = await r.json();
-    if (res.success) {
-      toast('🎉 GitHub\'a başarıyla gönderildi! Canlı site güncellendi.', 'success', 4000);
-    } else {
-      toast('GitHub yükleme hatası: ' + (res.error || 'Bilinmeyen hata'), 'error', 5000);
+    if (r.ok) {
+      const res = await r.json();
+      if (res.success) {
+        usedServer = true;
+        toast('🎉 GitHub\'a başarıyla gönderildi! (Yerel Sunucu)', 'success', 4000);
+      }
     }
   } catch(e) {
-    toast('Sunucuya erişilemedi. Lütfen "yayina_al.bat" dosyasını kullanın.', 'error', 4000);
+    // Yerel sunucu yoksa mobil cloud sync moduna devam et
+  }
+
+  if (usedServer) {
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 GitHub\'a Gönder'; }
+    return;
+  }
+
+  // 2. Mobil / Cloud GitHub API Modu
+  const token = localStorage.getItem('tatil_gh_token');
+  if (!token) {
+    toast('⚠️ Cepten GitHub\'a kaydetmek için Ayarlar sekmesinden GitHub Token girmelisiniz.', 'error', 5000);
+    switchTab('set');
+    document.getElementById('gh-token')?.focus();
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 GitHub\'a Gönder'; }
+    return;
+  }
+
+  try {
+    const repoOwner = 'cmtsy81';
+    const repoName = 'harcamalar';
+    const filePath = 'data.json';
+    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+
+    const getRes = await fetch(apiUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!getRes.ok) {
+      throw new Error('GitHub dosya bilgisi alınamadı (HTTP ' + getRes.status + ') - Token yetkilerini kontrol edin.');
+    }
+
+    const fileData = await getRes.json();
+    const currentSha = fileData.sha;
+
+    // UTF-8 Base64 encode (Türkçe karakter destekli)
+    const jsonStr = JSON.stringify(S, null, 2);
+    const base64Content = btoa(unescape(encodeURIComponent(jsonStr)));
+
+    const putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'Harcamalar güncellendi (Mobil)',
+        content: base64Content,
+        sha: currentSha,
+        branch: 'main'
+      })
+    });
+
+    if (!putRes.ok) {
+      const errJson = await putRes.json();
+      throw new Error(errJson.message || 'GitHub API yazma hatası');
+    }
+
+    toast('🎉 Cepten GitHub\'a başarıyla kaydedildi! ~1 dakika içinde canlı sitede güncellenecek.', 'success', 5000);
+  } catch(err) {
+    toast('❌ GitHub Cloud Sync Hatası: ' + err.message, 'error', 6000);
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -1781,6 +1929,8 @@ function renderSettings() {
   document.getElementById('set-dest').value  = S.destination || '';
   document.getElementById('set-start').value = S.startDate   || '';
   document.getElementById('set-end').value   = S.endDate     || '';
+  const tokenInp = document.getElementById('gh-token');
+  if (tokenInp) tokenInp.value = localStorage.getItem('tatil_gh_token') || '';
 }
 
 function saveSettings() {
