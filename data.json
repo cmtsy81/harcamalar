@@ -3,7 +3,7 @@
   "destination": "İtalya",
   "startDate": "2026-08-28",
   "endDate": "2026-09-12",
-  "lastUpdated": "2026-08-17",
+  "lastUpdated": "2026-08-20",
   "persons": [
     {
       "id": "cem",
@@ -366,7 +366,20 @@
         "fatma": 3.33,
         "defne": 3.33
       }
+    },
+    {
+      "id": "id_9qum9xf",
+      "title": "Ödeme: Ferhat -> Cem",
+      "currency": "TRY",
+      "totalAmount": 42000,
+      "paidBy": "ali",
+      "date": "2026-08-20",
+      "category": "payment",
+      "notes": "",
+      "shares": {
+        "cem": 42000
+      }
     }
   ],
-  "version": 60
+  "version": 61
 }
