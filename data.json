@@ -392,7 +392,20 @@
       "shares": {
         "cem": 250
       }
+    },
+    {
+      "id": "id_cztw6hh",
+      "title": "Ödeme: Ferhat -> Cem",
+      "currency": "EUR",
+      "totalAmount": 100,
+      "paidBy": "ali",
+      "date": "2026-08-28",
+      "category": "payment",
+      "notes": "",
+      "shares": {
+        "cem": 100
+      }
     }
   ],
-  "version": 62
+  "version": 63
 }
