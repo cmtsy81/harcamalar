@@ -3,7 +3,7 @@
   "destination": "İtalya",
   "startDate": "2026-08-28",
   "endDate": "2026-09-12",
-  "lastUpdated": "2026-08-28",
+  "lastUpdated": "2026-08-29",
   "persons": [
     {
       "id": "cem",
@@ -300,74 +300,6 @@
       "period": "payment"
     },
     {
-      "id": "id_kok62h4",
-      "title": "comosetto del angelo forma gelato",
-      "currency": "EUR",
-      "totalAmount": 25,
-      "paidBy": "ali",
-      "date": "2026-08-17",
-      "category": "food",
-      "period": "on_trip",
-      "notes": "",
-      "items": [
-        {
-          "id": "id_dod43bt",
-          "name": "dondurma",
-          "amount": 25,
-          "consumers": [
-            "cem",
-            "zeynep",
-            "can",
-            "ali",
-            "fatma",
-            "defne"
-          ]
-        }
-      ],
-      "shares": {
-        "cem": 4.17,
-        "zeynep": 4.17,
-        "can": 4.17,
-        "ali": 4.17,
-        "fatma": 4.17,
-        "defne": 4.17
-      }
-    },
-    {
-      "id": "id_d8ftwb1",
-      "title": "Ldldl",
-      "currency": "EUR",
-      "totalAmount": 20,
-      "paidBy": "cem",
-      "date": "2026-08-17",
-      "category": "food",
-      "period": "on_trip",
-      "notes": "",
-      "items": [
-        {
-          "id": "id_6ssglex",
-          "name": "Mdkdkd",
-          "amount": 20,
-          "consumers": [
-            "cem",
-            "zeynep",
-            "can",
-            "ali",
-            "fatma",
-            "defne"
-          ]
-        }
-      ],
-      "shares": {
-        "cem": 3.33,
-        "zeynep": 3.33,
-        "can": 3.33,
-        "ali": 3.33,
-        "fatma": 3.33,
-        "defne": 3.33
-      }
-    },
-    {
       "id": "id_9qum9xf",
       "title": "Ödeme: Ferhat -> Cem",
       "currency": "TRY",
@@ -405,7 +337,113 @@
       "shares": {
         "cem": 100
       }
+    },
+    {
+      "id": "id_i0lj1of",
+      "title": "Biletler",
+      "currency": "EUR",
+      "totalAmount": 15,
+      "paidBy": "ali",
+      "date": "2026-08-29",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "items": [
+        {
+          "id": "id_pxkxum2",
+          "name": "Bilet",
+          "amount": 15,
+          "consumers": [
+            "cem",
+            "zeynep",
+            "can",
+            "ali",
+            "fatma",
+            "defne"
+          ]
+        }
+      ],
+      "shares": {
+        "cem": 2.5,
+        "zeynep": 2.5,
+        "can": 2.5,
+        "ali": 2.5,
+        "fatma": 2.5,
+        "defne": 2.5
+      }
+    },
+    {
+      "id": "id_2pi2i1a",
+      "title": "Havalimanı taksi",
+      "currency": "EUR",
+      "totalAmount": 80,
+      "paidBy": "cem",
+      "date": "2026-08-29",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "items": [
+        {
+          "id": "id_t6yz3az",
+          "name": "Taksi",
+          "amount": 80,
+          "consumers": [
+            "cem",
+            "zeynep",
+            "can",
+            "ali",
+            "fatma",
+            "defne"
+          ]
+        }
+      ],
+      "shares": {
+        "cem": 13.33,
+        "zeynep": 13.33,
+        "can": 13.33,
+        "ali": 13.33,
+        "fatma": 13.33,
+        "defne": 13.33
+      }
+    },
+    {
+      "id": "id_opoeyu6",
+      "title": "Taksi",
+      "currency": "EUR",
+      "totalAmount": 25,
+      "paidBy": "cem",
+      "date": "2026-08-29",
+      "category": "transport",
+      "period": "on_trip",
+      "notes": "",
+      "shares": {
+        "cem": 4.18,
+        "zeynep": 4.16,
+        "can": 4.16,
+        "ali": 4.18,
+        "fatma": 4.16,
+        "defne": 4.16
+      }
+    },
+    {
+      "id": "id_cpdhdis",
+      "title": "Tostlar 1. Gün",
+      "currency": "EUR",
+      "totalAmount": 66,
+      "paidBy": "cem",
+      "date": "2026-08-29",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "shares": {
+        "cem": 11,
+        "zeynep": 11,
+        "can": 11,
+        "ali": 11,
+        "fatma": 11,
+        "defne": 11
+      }
     }
   ],
-  "version": 63
+  "version": 69
 }
