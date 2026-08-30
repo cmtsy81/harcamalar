@@ -3,7 +3,7 @@
   "destination": "İtalya",
   "startDate": "2026-08-28",
   "endDate": "2026-09-12",
-  "lastUpdated": "2026-08-29",
+  "lastUpdated": "2026-08-30",
   "persons": [
     {
       "id": "cem",
@@ -443,7 +443,64 @@
         "fatma": 11,
         "defne": 11
       }
+    },
+    {
+      "id": "id_i2dzl9c",
+      "title": "Yemek makarna",
+      "currency": "EUR",
+      "totalAmount": 108,
+      "paidBy": "cem",
+      "date": "2026-08-30",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "shares": {
+        "cem": 18.68,
+        "zeynep": 18.66,
+        "can": 18.66,
+        "ali": 17.34,
+        "fatma": 17.33,
+        "defne": 17.33
+      }
+    },
+    {
+      "id": "id_67k1vus",
+      "title": "Yahudi mahallesi yemek",
+      "currency": "EUR",
+      "totalAmount": 32,
+      "paidBy": "ali",
+      "date": "2026-08-30",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "shares": {
+        "cem": 5.34,
+        "zeynep": 5.33,
+        "can": 5.33,
+        "ali": 5.34,
+        "fatma": 5.33,
+        "defne": 5.33
+      }
+    },
+    {
+      "id": "id_5p62efl",
+      "title": "Trevi kahvaltı",
+      "currency": "EUR",
+      "totalAmount": 50,
+      "paidBy": "cem",
+      "date": "2026-08-30",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "shares": {
+        "cem": 8.35,
+        "zeynep": 8.33,
+        "can": 8.33,
+        "ali": 8.33,
+        "fatma": 8.33,
+        "defne": 8.33
+      }
     }
   ],
-  "version": 69
+  "version": 72
 }
