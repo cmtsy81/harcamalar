@@ -3,7 +3,7 @@
   "destination": "İtalya",
   "startDate": "2026-08-28",
   "endDate": "2026-09-12",
-  "lastUpdated": "2026-08-30",
+  "lastUpdated": "2026-09-02",
   "persons": [
     {
       "id": "cem",
@@ -500,7 +500,26 @@
         "fatma": 8.33,
         "defne": 8.33
       }
+    },
+    {
+      "id": "id_oeh8yai",
+      "title": "Varikan makarna",
+      "currency": "EUR",
+      "totalAmount": 60,
+      "paidBy": "cem",
+      "date": "2026-09-02",
+      "category": "food",
+      "period": "on_trip",
+      "notes": "",
+      "shares": {
+        "cem": 10,
+        "zeynep": 10,
+        "can": 10,
+        "ali": 10,
+        "fatma": 10,
+        "defne": 10
+      }
     }
   ],
-  "version": 72
+  "version": 73
 }
